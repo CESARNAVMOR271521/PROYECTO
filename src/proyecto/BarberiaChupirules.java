@@ -8,12 +8,20 @@ import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.util.HashMap;
+import java.util.Map;
 
+import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
+import javax.swing.InputMap;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 
@@ -25,21 +33,29 @@ public class BarberiaChupirules {
     private JPanel sidebar;
 
     // 🎨 ESTILO “SALÓN DE LOS DIOSES” – HOLLOW KNIGHT
-    private final Color BG_MARBLE = new Color(233, 227, 200);       // Mármol claro
-    private final Color BG_GOLD_SOFT = new Color(209, 184, 108);    // Dorado suave
-    private final Color BG_GOLD_DARK = new Color(140, 112, 60);     // Dorado oscuro
-    private final Color BG_PANEL = new Color(245, 240, 220);        // Panel suave
+    private final Color BG_MARBLE = new Color(233, 227, 200); // Mármol claro
+    private final Color BG_GOLD_SOFT = new Color(209, 184, 108); // Dorado suave
+    private final Color BG_GOLD_DARK = new Color(140, 112, 60); // Dorado oscuro
+    private final Color BG_PANEL = new Color(245, 240, 220); // Panel suave
 
-    private final Color BTN_DEFAULT = new Color(199, 179, 106);     // Dorado neutro
-    private final Color BTN_HOVER = new Color(228, 204, 130);       // Dorado claro
-    private final Color TXT_MAIN = new Color(60, 45, 20);           // Café oscuro elegante
+    private final Color BTN_DEFAULT = new Color(199, 179, 106); // Dorado neutro
+    private final Color BTN_HOVER = new Color(228, 204, 130); // Dorado claro
+    private final Color BTN_ACTIVE = new Color(255, 230, 150); // Dorado muy claro (Activo)
+    private final Color TXT_MAIN = new Color(60, 45, 20); // Café oscuro elegante
 
-    private final Color BORDER_GOD = new Color(242, 213, 107);      // Oro brillante
+    private final Color BORDER_GOD = new Color(242, 213, 107); // Oro brillante
+
+    // Mapa para gestionar los botones activos
+    private Map<String, JButton> menuButtons = new HashMap<>();
 
     public static void main(String[] args) {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
+
+        // Initialize Database
+        DatabaseHelper.initDB();
 
         EventQueue.invokeLater(() -> {
             BarberiaChupirules window = new BarberiaChupirules();
@@ -77,7 +93,7 @@ public class BarberiaChupirules {
         JLabel lblTitle = new JLabel("CHUPIRULES");
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
         lblTitle.setForeground(BORDER_GOD);
-        lblTitle.setFont(new Font("Serif", Font.BOLD, 28));  // tipografía elegante
+        lblTitle.setFont(new Font("Serif", Font.BOLD, 28)); // tipografía elegante
 
         JLabel lblSubtitle = new JLabel("BARBER SHOP");
         lblSubtitle.setHorizontalAlignment(SwingConstants.CENTER);
@@ -101,16 +117,22 @@ public class BarberiaChupirules {
         contentPanel.setBackground(BG_PANEL);
         frame.add(contentPanel, BorderLayout.CENTER);
 
-        // MÓDULOS
-        addModule(menuContainer, "Clientes", "CLIENTES", createPanel("Gestión de Clientes"));
-        addModule(menuContainer, "Barberos", "BARBEROS", createPanel("Gestión de Barberos"));
-        addModule(menuContainer, "Servicios", "SERVICIOS", createPanel("Catálogo de Servicios"));
-        addModule(menuContainer, "Citas", "CITAS", createPanel("Agenda y Citas"));
-        addModule(menuContainer, "Ventas", "VENTAS", createPanel("Punto de Venta"));
-        addModule(menuContainer, "Historial", "DETALLE", createPanel("Historial de Ventas"));
-        addModule(menuContainer, "Productos", "PRODUCTOS", createPanel("Gestión de Productos"));
-        addModule(menuContainer, "Inventario", "INVENTARIO", createPanel("Control de Inventario"));
-        addModule(menuContainer, "Usuarios", "USUARIOS", createPanel("Administración de Usuarios"));
+        // MÓDULOS (F1 -> F12)
+        addModule(menuContainer, "Clientes (F1)", "CLIENTES", new ClientesPanel(), "F1");
+        addModule(menuContainer, "Barberos (F2)", "BARBEROS", new BarberosPanel(), "F2");
+        addModule(menuContainer, "Servicios (F3)", "SERVICIOS", new ServiciosPanel(), "F3");
+        addModule(menuContainer, "Citas (F4)", "CITAS", new CitasPanel(), "F4");
+        addModule(menuContainer, "Ventas (F5)", "VENTAS", new VentasPanel(), "F5");
+        addModule(menuContainer, "Historial (F6)", "DETALLE", new HistorialPanel(), "F6");
+        addModule(menuContainer, "Productos (F7)", "PRODUCTOS", new ProductosPanel(), "F7");
+
+        addModule(menuContainer, "Usuarios (F9)", "USUARIOS", new UsuariosPanel(), "F9");
+        addModule(menuContainer, "Pagos (F10)", "PAGOS", new PagosPanel(), "F10");
+
+        addModule(menuContainer, "Facturas (F12)", "FACTURAS", new FacturasPanel(), "F12");
+        // Extra modules without shortcuts for now, or could use Shift+F1 etc.
+        addModule(menuContainer, "Proveedores", "PROVEEDORES", new ProveedoresPanel(), null);
+        addModule(menuContainer, "Compras", "COMPRAS", createPanel("Compras a Proveedores"), null);
 
         // FOOTER SALIR
         JPanel footer = new JPanel();
@@ -125,42 +147,77 @@ public class BarberiaChupirules {
         sidebar.add(footer, BorderLayout.SOUTH);
 
         // MÓDULO INICIAL
-        cardLayout.show(contentPanel, "CITAS");
+        setModuleActive("CITAS");
     }
 
-    private void addModule(JPanel container, String text, String cardName, JPanel panel) {
+    private void addModule(JPanel container, String text, String cardName, JPanel panel, String keyStroke) {
         JButton btn = createGodButton(text);
-        btn.addActionListener(e -> cardLayout.show(contentPanel, cardName));
+        btn.addActionListener(e -> setModuleActive(cardName));
+        btn.setToolTipText("Abrir módulo de " + text.replace(" (", "").replace(")", ""));
+
         container.add(btn);
         contentPanel.add(panel, cardName);
+        menuButtons.put(cardName, btn);
+
+        // ⌨️ BINDING DE TECLADO
+        if (keyStroke != null) {
+            InputMap inputMap = contentPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+            ActionMap actionMap = contentPanel.getActionMap();
+
+            inputMap.put(KeyStroke.getKeyStroke(keyStroke), cardName);
+            actionMap.put(cardName, new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    setModuleActive(cardName);
+                }
+            });
+        }
+    }
+
+    private void setModuleActive(String cardName) {
+        cardLayout.show(contentPanel, cardName);
+
+        // Actualizar visualmente los botones
+        for (Map.Entry<String, JButton> entry : menuButtons.entrySet()) {
+            if (entry.getKey().equals(cardName)) {
+                entry.getValue().setBackground(BTN_ACTIVE);
+                entry.getValue().setBorder(BorderFactory.createMatteBorder(3, 3, 3, 3, Color.WHITE)); // Resalte extra
+            } else {
+                entry.getValue().setBackground(BTN_DEFAULT);
+                entry.getValue().setBorder(BorderFactory.createMatteBorder(3, 3, 3, 3, BORDER_GOD));
+            }
+        }
     }
 
     // ✨ BOTÓN DE ESTILO DIVINO
     private JButton createGodButton(String text) {
 
         JButton btn = new JButton(text);
-        btn.setPreferredSize(new Dimension(200, 40));
-        btn.setForeground(TXT_MAIN); 
+        btn.setPreferredSize(new Dimension(200, 35)); // Ligeramente más pequeño para que quepan todos
+        btn.setForeground(TXT_MAIN);
         btn.setBackground(BTN_DEFAULT);
-        btn.setFont(new Font("Serif", Font.BOLD, 16));
+        btn.setFont(new Font("Serif", Font.BOLD, 14)); // Fuente ajustada
         btn.setFocusPainted(false);
 
         btn.setBorder(BorderFactory.createMatteBorder(
                 3, 3, 3, 3,
-                BORDER_GOD
-        ));
+                BORDER_GOD));
 
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                btn.setBackground(BTN_HOVER);
-                btn.setForeground(TXT_MAIN);
+                // Solo cambiar si no es el botón activo
+                if (btn.getBackground() != BTN_ACTIVE) {
+                    btn.setBackground(BTN_HOVER);
+                }
             }
 
             public void mouseExited(java.awt.event.MouseEvent evt) {
-                btn.setBackground(BTN_DEFAULT);
-                btn.setForeground(TXT_MAIN);
+                // Solo restaurar si no es el botón activo
+                if (btn.getBackground() != BTN_ACTIVE) {
+                    btn.setBackground(BTN_DEFAULT);
+                }
             }
         });
 

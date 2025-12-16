@@ -8,5 +8,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="src/proyecto/sqlite-jdbc-3.51.1.0.jar"/>
 	<classpathentry kind="lib" path="src/proyecto/itextpdf-5.5.9.jar"/>
+	<classpathentry kind="lib" path="src/proyecto/vosk-0.3.45.jar"/>
+	<classpathentry kind="lib" path="src/proyecto/jna-5.13.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
