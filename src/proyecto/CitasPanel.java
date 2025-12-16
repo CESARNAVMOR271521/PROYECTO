@@ -68,14 +68,14 @@ public class CitasPanel extends JPanel {
         formPanel.add(new JLabel("Hora (HH:MM):"));
         formPanel.add(txtHora);
 
-        String[] columnNames = {"ID", "Fecha", "Hora", "Cliente", "Barbero", "Servicio", "Estado"};
+        String[] columnNames = { "ID", "Fecha", "Hora", "Cliente", "Barbero", "Servicio", "Estado" };
         tableModel = new DefaultTableModel(columnNames, 0);
         table = new JTable(tableModel);
         // Hide ID column
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
-        
+
         JScrollPane scrollPane = new JScrollPane(table);
         add(scrollPane, BorderLayout.CENTER);
 
@@ -86,9 +86,12 @@ public class CitasPanel extends JPanel {
         JButton btnDelete = createButton("Cancelar Cita");
         JButton btnRefresh = createButton("Refrescar");
 
+        VoiceButton btnVoice = new VoiceButton();
+
         btnPanel.add(btnAdd);
         btnPanel.add(btnDelete);
         btnPanel.add(btnRefresh);
+        btnPanel.add(btnVoice);
 
         JPanel southContainer = new JPanel(new BorderLayout());
         southContainer.add(formPanel, BorderLayout.CENTER);
@@ -98,6 +101,14 @@ public class CitasPanel extends JPanel {
         btnAdd.addActionListener(e -> addCita());
         btnDelete.addActionListener(e -> deleteCita());
         btnRefresh.addActionListener(e -> loadData());
+
+        // Global Focus Tracking
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", e -> {
+            java.awt.Component c = (java.awt.Component) e.getNewValue();
+            if (c instanceof JTextField) {
+                btnVoice.setTargetComponent(c);
+            }
+        });
 
         loadComboBoxes();
         loadData();
@@ -120,8 +131,8 @@ public class CitasPanel extends JPanel {
         servicioIds.clear();
 
         try (Connection conn = DatabaseHelper.connect();
-             Statement stmt = conn.createStatement()) {
-            
+                Statement stmt = conn.createStatement()) {
+
             // Clientes
             ResultSet rs = stmt.executeQuery("SELECT id_cliente, nombre FROM Cliente");
             while (rs.next()) {
@@ -153,25 +164,26 @@ public class CitasPanel extends JPanel {
 
     private void loadData() {
         tableModel.setRowCount(0);
-        String sql = "SELECT c.id_cita, c.fecha, c.hora, cl.nombre as cliente, b.nombre as barbero, s.nombre as servicio, c.estado " +
-                     "FROM Cita c " +
-                     "JOIN Cliente cl ON c.id_cliente = cl.id_cliente " +
-                     "JOIN Barbero b ON c.id_barbero = b.id_barbero " +
-                     "JOIN Servicio s ON c.id_servicio = s.id_servicio";
-                     
+        String sql = "SELECT c.id_cita, c.fecha, c.hora, cl.nombre as cliente, b.nombre as barbero, s.nombre as servicio, c.estado "
+                +
+                "FROM Cita c " +
+                "JOIN Cliente cl ON c.id_cliente = cl.id_cliente " +
+                "JOIN Barbero b ON c.id_barbero = b.id_barbero " +
+                "JOIN Servicio s ON c.id_servicio = s.id_servicio";
+
         try (Connection conn = DatabaseHelper.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                tableModel.addRow(new Object[]{
-                    rs.getInt("id_cita"),
-                    rs.getString("fecha"),
-                    rs.getString("hora"),
-                    rs.getString("cliente"),
-                    rs.getString("barbero"),
-                    rs.getString("servicio"),
-                    rs.getString("estado")
+                tableModel.addRow(new Object[] {
+                        rs.getInt("id_cita"),
+                        rs.getString("fecha"),
+                        rs.getString("hora"),
+                        rs.getString("cliente"),
+                        rs.getString("barbero"),
+                        rs.getString("servicio"),
+                        rs.getString("estado")
                 });
             }
         } catch (SQLException e) {
@@ -180,7 +192,8 @@ public class CitasPanel extends JPanel {
     }
 
     private void addCita() {
-        if (cbCliente.getSelectedIndex() == -1 || cbBarbero.getSelectedIndex() == -1 || cbServicio.getSelectedIndex() == -1) {
+        if (cbCliente.getSelectedIndex() == -1 || cbBarbero.getSelectedIndex() == -1
+                || cbServicio.getSelectedIndex() == -1) {
             JOptionPane.showMessageDialog(this, "Seleccione todos los campos");
             return;
         }
@@ -191,7 +204,7 @@ public class CitasPanel extends JPanel {
 
         String sql = "INSERT INTO Cita(fecha, hora, id_cliente, id_barbero, id_servicio, estado) VALUES(?,?,?,?,?,?)";
         try (Connection conn = DatabaseHelper.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, txtFecha.getText());
             pstmt.setString(2, txtHora.getText());
             pstmt.setInt(3, idCliente);
@@ -207,12 +220,15 @@ public class CitasPanel extends JPanel {
 
     private void deleteCita() {
         int row = table.getSelectedRow();
-        if (row == -1) return;
+        if (row == -1)
+            return;
         int id = (int) tableModel.getValueAt(row, 0);
 
-        if (JOptionPane.showConfirmDialog(this, "¿Cancelar esta cita?", "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+        if (JOptionPane.showConfirmDialog(this, "¿Cancelar esta cita?", "Confirmar",
+                JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try (Connection conn = DatabaseHelper.connect();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE Cita SET estado='cancelado' WHERE id_cita=?")) {
+                    PreparedStatement pstmt = conn
+                            .prepareStatement("UPDATE Cita SET estado='cancelado' WHERE id_cita=?")) {
                 pstmt.setInt(1, id);
                 pstmt.executeUpdate();
                 loadData();

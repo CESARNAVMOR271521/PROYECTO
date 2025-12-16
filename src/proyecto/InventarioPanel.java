@@ -31,7 +31,7 @@ public class InventarioPanel extends JPanel {
     private JComboBox<String> cbProducto;
     private JTextField txtCantidad, txtMinimo;
     private ArrayList<Integer> productoIds = new ArrayList<>();
-    
+
     // Theme Colors
     private final Color BTN_DEFAULT = new Color(199, 179, 106);
     private final Color TXT_MAIN = new Color(60, 45, 20);
@@ -61,14 +61,14 @@ public class InventarioPanel extends JPanel {
         formPanel.add(new JLabel("Stock Mínimo:"));
         formPanel.add(txtMinimo);
 
-        String[] columnNames = {"ID", "Producto", "Stock Actual", "Mínimo"};
+        String[] columnNames = { "ID", "Producto", "Stock Actual", "Mínimo" };
         tableModel = new DefaultTableModel(columnNames, 0);
         table = new JTable(tableModel);
         // Hide ID column
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
-        
+
         JScrollPane scrollPane = new JScrollPane(table);
         add(scrollPane, BorderLayout.CENTER);
 
@@ -81,6 +81,9 @@ public class InventarioPanel extends JPanel {
         btnPanel.add(btnAdd);
         btnPanel.add(btnRefresh);
 
+        VoiceButton btnVoice = new VoiceButton();
+        btnPanel.add(btnVoice);
+
         JPanel southContainer = new JPanel(new BorderLayout());
         southContainer.add(formPanel, BorderLayout.CENTER);
         southContainer.add(btnPanel, BorderLayout.SOUTH);
@@ -92,8 +95,18 @@ public class InventarioPanel extends JPanel {
             loadData();
         });
 
+        // Global Focus Tracking
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", e -> {
+            java.awt.Component c = (java.awt.Component) e.getNewValue();
+            if (c instanceof JTextField) {
+                btnVoice.setTargetComponent(c);
+            }
+        });
+
         loadProductos();
+
         loadData();
+
     }
 
     private JButton createButton(String text) {
@@ -108,8 +121,8 @@ public class InventarioPanel extends JPanel {
         cbProducto.removeAllItems();
         productoIds.clear();
         try (Connection conn = DatabaseHelper.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT id_producto, nombre FROM Producto")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT id_producto, nombre FROM Producto")) {
 
             while (rs.next()) {
                 productoIds.add(rs.getInt("id_producto"));
@@ -123,18 +136,18 @@ public class InventarioPanel extends JPanel {
     private void loadData() {
         tableModel.setRowCount(0);
         String sql = "SELECT i.id_inventario, p.nombre, i.cantidad_actual, i.minimo " +
-                     "FROM Inventario i " +
-                     "JOIN Producto p ON i.id_producto = p.id_producto";
+                "FROM Inventario i " +
+                "JOIN Producto p ON i.id_producto = p.id_producto";
         try (Connection conn = DatabaseHelper.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                tableModel.addRow(new Object[]{
-                    rs.getInt("id_inventario"),
-                    rs.getString("nombre"),
-                    rs.getInt("cantidad_actual"),
-                    rs.getInt("minimo")
+                tableModel.addRow(new Object[] {
+                        rs.getInt("id_inventario"),
+                        rs.getString("nombre"),
+                        rs.getInt("cantidad_actual"),
+                        rs.getInt("minimo")
                 });
             }
         } catch (SQLException e) {
@@ -143,10 +156,11 @@ public class InventarioPanel extends JPanel {
     }
 
     private void updateStock() {
-        if (cbProducto.getSelectedIndex() == -1) return;
-        
+        if (cbProducto.getSelectedIndex() == -1)
+            return;
+
         int idProducto = productoIds.get(cbProducto.getSelectedIndex());
-        
+
         try {
             int cantidad = Integer.parseInt(txtCantidad.getText());
             int minimo = Integer.parseInt(txtMinimo.getText());
@@ -154,9 +168,11 @@ public class InventarioPanel extends JPanel {
             // Check if entry exists
             boolean exists = false;
             try (Connection conn = DatabaseHelper.connect();
-                 PreparedStatement checkStmt = conn.prepareStatement("SELECT 1 FROM Inventario WHERE id_producto=?")) {
+                    PreparedStatement checkStmt = conn
+                            .prepareStatement("SELECT 1 FROM Inventario WHERE id_producto=?")) {
                 checkStmt.setInt(1, idProducto);
-                if (checkStmt.executeQuery().next()) exists = true;
+                if (checkStmt.executeQuery().next())
+                    exists = true;
             }
 
             String sql;
@@ -167,7 +183,7 @@ public class InventarioPanel extends JPanel {
             }
 
             try (Connection conn = DatabaseHelper.connect();
-                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, cantidad);
                 pstmt.setInt(2, minimo);
                 pstmt.setInt(3, idProducto);

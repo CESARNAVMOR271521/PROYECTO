@@ -1,6 +1,8 @@
 package proyecto;
 
 import java.io.IOException;
+import java.util.function.Consumer;
+
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.DataLine;
@@ -14,81 +16,126 @@ import org.vosk.Recognizer;
 
 public class ReconocimientoVoz {
 
+    private static ReconocimientoVoz instance;
     private Model model;
     private boolean running = false;
+    private Thread listeningThread;
 
-    public ReconocimientoVoz() {
+    private ReconocimientoVoz() {
         // Desactivar logs de Vosk para no ensuciar la consola
         LibVosk.setLogLevel(LogLevel.WARNINGS);
 
         try {
             // Cargar el modelo
-            // Asegúrate de que la ruta sea correcta relativa al proyecto o absoluta
-            model = new Model("vosk-model-small-es-0.42");
+            String modelPath = "vosk-model-small-es-0.42";
+            System.out.println("Cargando modelo de voz desde: " + new java.io.File(modelPath).getAbsolutePath());
+            model = new Model(modelPath);
+            System.out.println("Modelo cargado correctamente.");
         } catch (IOException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Error al cargar el modelo de voz: " + e.getMessage());
+            JOptionPane.showMessageDialog(null,
+                    "Error al cargar el modelo de voz (vosk-model-small-es-0.42): " + e.getMessage());
         }
     }
 
-    public void escuchar() {
-        if (model == null)
+    public boolean isReady() {
+        return model != null;
+    }
+
+    public static synchronized ReconocimientoVoz getInstance() {
+        if (instance == null) {
+            instance = new ReconocimientoVoz();
+        }
+        return instance;
+    }
+
+    public void startListening(Consumer<String> onTextRecognized) {
+        if (model == null) {
+            System.err.println("No se puede iniciar: Modelo no cargado.");
+            return;
+        }
+        if (running)
             return;
 
         running = true;
+        listeningThread = new Thread(() -> {
+            try {
+                AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 16000, 16, 1, 2, 16000, false);
+                DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
 
-        // Formato de audio requerido por Vosk (16kHz, 16bit, mono)
-        AudioFormat format = new AudioFormat(AudioFormat.Encoding.PCM_SIGNED, 16000, 16, 1, 2, 16000, false);
-        DataLine.Info info = new DataLine.Info(TargetDataLine.class, format);
+                if (!AudioSystem.isLineSupported(info)) {
+                    System.err.println("Line not supported");
+                    running = false;
+                    return;
+                }
 
-        if (!AudioSystem.isLineSupported(info)) {
-            System.err.println("Line not supported");
-            return;
-        }
+                try (TargetDataLine line = (TargetDataLine) AudioSystem.getLine(info);
+                        Recognizer recognizer = new Recognizer(model, 16000)) {
 
-        try (TargetDataLine line = (TargetDataLine) AudioSystem.getLine(info);
-                Recognizer recognizer = new Recognizer(model, 16000)) {
+                    line.open(format);
+                    line.start();
 
-            line.open(format);
-            line.start();
+                    System.out.println("Escuchando...");
 
-            System.out.println("Escuchando... (Diga 'salir' para detener)");
+                    int nbytes;
+                    byte[] b = new byte[4096];
 
-            int nbytes;
-            byte[] b = new byte[4096];
+                    while (running) {
+                        nbytes = line.read(b, 0, b.length);
 
-            while (running) {
-                nbytes = line.read(b, 0, b.length);
-
-                if (nbytes >= 0) {
-                    if (recognizer.acceptWaveForm(b, nbytes)) {
-                        String result = recognizer.getResult();
-                        System.out.println("Reconocido: " + result);
-                        // Aquí podrías procesar el texto (result es un JSON)
-                        // Ejemplo simple de parseo:
-                        if (result.contains("articulo") || result.contains("salir")) {
-                            // Lógica simple para detener si se desea controlar por voz
+                        if (nbytes >= 0) {
+                            if (recognizer.acceptWaveForm(b, nbytes)) {
+                                String resultJson = recognizer.getResult();
+                                processResult(resultJson, onTextRecognized);
+                            } else {
+                                // Partial results
+                            }
                         }
-                    } else {
-                        // System.out.println(recognizer.getPartialResult());
+                    }
+
+                    line.stop();
+                    line.close();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } finally {
+                running = false;
+                System.out.println("Detenido.");
+            }
+        });
+        listeningThread.start();
+    }
+
+    private void processResult(String json, Consumer<String> callback) {
+        // Manual JSON parsing: {"text" : "some text"}
+        try {
+            int textIndex = json.indexOf("\"text\"");
+            if (textIndex != -1) {
+                int colonIndex = json.indexOf(":", textIndex);
+                if (colonIndex != -1) {
+                    int startQuote = json.indexOf("\"", colonIndex);
+                    if (startQuote != -1) {
+                        int endQuote = json.indexOf("\"", startQuote + 1);
+                        if (endQuote != -1) {
+                            String text = json.substring(startQuote + 1, endQuote);
+                            if (!text.trim().isEmpty()) {
+                                callback.accept(text);
+                            }
+                        }
                     }
                 }
             }
-
-            line.stop();
-            line.close();
-
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void detener() {
+    public void stopListening() {
         running = false;
     }
 
-    public static void main(String[] args) {
-        ReconocimientoVoz voz = new ReconocimientoVoz();
-        voz.escuchar();
+    public boolean isRunning() {
+        return running;
     }
 }

@@ -2,6 +2,7 @@ package proyecto;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -17,7 +18,6 @@ import javax.swing.ButtonGroup;
 import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 import proyecto.vista.TicketWindow;
-
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -40,7 +40,7 @@ public class VentasPanel extends JPanel {
     private JTextField txtCantidad, txtTotal;
     private JRadioButton rbEfectivo, rbTarjeta;
     private ButtonGroup bgPago;
-    
+
     private ArrayList<Integer> clienteIds = new ArrayList<>();
     private ArrayList<Integer> itemIds = new ArrayList<>(); // IDs of currently loaded items (products or services)
     private ArrayList<Double> itemPrices = new ArrayList<>();
@@ -64,10 +64,10 @@ public class VentasPanel extends JPanel {
         selectionPanel.setBackground(new Color(245, 240, 220));
 
         cbCliente = new JComboBox<>();
-        cbTipoItem = new JComboBox<>(new String[]{"Servicio", "Producto"});
+        cbTipoItem = new JComboBox<>(new String[] { "Servicio", "Producto" });
         cbItem = new JComboBox<>();
         txtCantidad = new JTextField("1");
-        
+
         JButton btnAdd = createButton("Agregar al Carrito");
 
         selectionPanel.add(new JLabel("Cliente:"));
@@ -77,51 +77,58 @@ public class VentasPanel extends JPanel {
         selectionPanel.add(new JLabel("Tipo:"));
         selectionPanel.add(cbTipoItem);
         selectionPanel.add(new JLabel("Item:"));
-        
+
         selectionPanel.add(cbItem);
         selectionPanel.add(new JLabel("Cantidad:"));
         selectionPanel.add(txtCantidad);
 
         // Cart Table
-        String[] columnNames = {"Tipo", "ID Item", "Nombre", "Precio Unit.", "Cantidad", "Subtotal"};
+        String[] columnNames = { "Tipo", "ID Item", "Nombre", "Precio Unit.", "Cantidad", "Subtotal" };
         cartModel = new DefaultTableModel(columnNames, 0);
         cartTable = new JTable(cartModel);
         // Hide ID Item column (index 1)
         cartTable.getColumnModel().getColumn(1).setMinWidth(0);
         cartTable.getColumnModel().getColumn(1).setMaxWidth(0);
         cartTable.getColumnModel().getColumn(1).setWidth(0);
-        
+
         JScrollPane scrollPane = new JScrollPane(cartTable);
 
         // Action Panel
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         actionPanel.setBackground(new Color(245, 240, 220));
-        
+
         txtTotal = new JTextField(10);
         txtTotal.setEditable(false);
         txtTotal.setText("0.00");
-        
+
         JButton btnProcess = createButton("Procesar Venta");
         JButton btnClear = createButton("Cancelar");
-        JButton btnAddCart = createButton("Agregar Item"); // Moving button here for better layout flow or keeping in grid
+        JButton btnAddCart = createButton("Agregar Item"); // Moving button here for better layout flow or keeping in
+                                                           // grid
 
         // Re-adding Add button to selection panel as intended above
-        // selectionPanel.add(btnAdd); // This was missing in the grid layout count logic if I wanted it there
-        
+        // selectionPanel.add(btnAdd); // This was missing in the grid layout count
+        // logic if I wanted it there
+
         // Let's reorganize slightly
         JPanel topContainer = new JPanel(new BorderLayout());
         topContainer.add(selectionPanel, BorderLayout.CENTER);
         JPanel addItemPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         addItemPanel.setBackground(new Color(245, 240, 220));
+
+        // Add Voice Button
+        VoiceButton btnVoice = new VoiceButton();
+        addItemPanel.add(btnVoice);
+
         addItemPanel.add(btnAdd);
         topContainer.add(addItemPanel, BorderLayout.SOUTH);
-        
+
         add(topContainer, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
 
         actionPanel.add(new JLabel("Total: "));
         actionPanel.add(txtTotal);
-        
+
         // Payment Method
         rbEfectivo = new JRadioButton("Efectivo");
         rbTarjeta = new JRadioButton("Tarjeta");
@@ -129,11 +136,11 @@ public class VentasPanel extends JPanel {
         bgPago.add(rbEfectivo);
         bgPago.add(rbTarjeta);
         rbEfectivo.setSelected(true); // Default
-        
+
         actionPanel.add(new JLabel(" | Pago: "));
         actionPanel.add(rbEfectivo);
         actionPanel.add(rbTarjeta);
-        
+
         actionPanel.add(btnProcess);
         actionPanel.add(btnClear);
         add(actionPanel, BorderLayout.SOUTH);
@@ -143,6 +150,14 @@ public class VentasPanel extends JPanel {
         btnAdd.addActionListener(e -> addItemToCart());
         btnProcess.addActionListener(e -> processSale());
         btnClear.addActionListener(e -> clearSale());
+
+        // Global Focus Tracking (Optional but helpful for robust voice target finding)
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", e -> {
+            Component c = (Component) e.getNewValue();
+            if (c instanceof JTextField) {
+                btnVoice.setTargetComponent(c);
+            }
+        });
 
         loadClientes();
         loadItems(); // Initial load
@@ -163,8 +178,8 @@ public class VentasPanel extends JPanel {
         clienteIds.add(-1); // ID for anonymous
 
         try (Connection conn = DatabaseHelper.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT id_cliente, nombre FROM Cliente")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT id_cliente, nombre FROM Cliente")) {
             while (rs.next()) {
                 clienteIds.add(rs.getInt("id_cliente"));
                 cbCliente.addItem(rs.getString("nombre"));
@@ -178,17 +193,17 @@ public class VentasPanel extends JPanel {
         cbItem.removeAllItems();
         itemIds.clear();
         itemPrices.clear();
-        
+
         String type = (String) cbTipoItem.getSelectedItem();
         boolean isService = "Servicio".equals(type);
-        
-        String sql = isService ? "SELECT id_servicio as id, nombre, precio FROM Servicio" 
-                               : "SELECT id_producto as id, nombre, precio_venta as precio FROM Producto";
+
+        String sql = isService ? "SELECT id_servicio as id, nombre, precio FROM Servicio"
+                : "SELECT id_producto as id, nombre, precio_venta as precio FROM Producto";
 
         try (Connection conn = DatabaseHelper.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-            
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
+
             while (rs.next()) {
                 itemIds.add(rs.getInt("id"));
                 cbItem.addItem(rs.getString("nombre") + " ($" + rs.getDouble("precio") + ")");
@@ -200,11 +215,13 @@ public class VentasPanel extends JPanel {
     }
 
     private void addItemToCart() {
-        if (cbItem.getSelectedIndex() == -1) return;
-        
+        if (cbItem.getSelectedIndex() == -1)
+            return;
+
         try {
             int qty = Integer.parseInt(txtCantidad.getText());
-            if (qty <= 0) throw new NumberFormatException();
+            if (qty <= 0)
+                throw new NumberFormatException();
 
             int index = cbItem.getSelectedIndex();
             int id = itemIds.get(index);
@@ -214,9 +231,9 @@ public class VentasPanel extends JPanel {
             String type = (String) cbTipoItem.getSelectedItem();
             double subtotal = price * qty;
 
-            cartModel.addRow(new Object[]{type, id, name, price, qty, subtotal});
+            cartModel.addRow(new Object[] { type, id, name, price, qty, subtotal });
             updateTotal();
-            
+
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Cantidad inválida");
         }
@@ -234,8 +251,10 @@ public class VentasPanel extends JPanel {
         cartModel.setRowCount(0);
         txtTotal.setText("0.00");
         txtCantidad.setText("1");
-        if (cbCliente.getItemCount() > 0) cbCliente.setSelectedIndex(0);
-        if (rbEfectivo != null) rbEfectivo.setSelected(true);
+        if (cbCliente.getItemCount() > 0)
+            cbCliente.setSelectedIndex(0);
+        if (rbEfectivo != null)
+            rbEfectivo.setSelected(true);
     }
 
     private void processSale() {
@@ -245,7 +264,8 @@ public class VentasPanel extends JPanel {
         }
 
         int clienteIdx = cbCliente.getSelectedIndex();
-        int idCliente = clienteIdx > 0 ? clienteIds.get(clienteIdx) : 0; // 0 for NULL/Anon if logic allows, or handle strictly
+        int idCliente = clienteIdx > 0 ? clienteIds.get(clienteIdx) : 0; // 0 for NULL/Anon if logic allows, or handle
+                                                                         // strictly
         Double total = Double.parseDouble(txtTotal.getText());
         String fecha = LocalDate.now().toString();
 
@@ -256,16 +276,20 @@ public class VentasPanel extends JPanel {
                 // 1. Create Sale
                 String sqlVenta = "INSERT INTO Venta(fecha, id_cliente, total, tipo) VALUES(?, ?, ?, ?)";
                 int idVenta = -1;
-                
+
                 PreparedStatement pstVenta = conn.prepareStatement(sqlVenta, Statement.RETURN_GENERATED_KEYS);
                 pstVenta.setString(1, fecha);
-                if (idCliente > 0) pstVenta.setInt(2, idCliente); else pstVenta.setNull(2, java.sql.Types.INTEGER);
+                if (idCliente > 0)
+                    pstVenta.setInt(2, idCliente);
+                else
+                    pstVenta.setNull(2, java.sql.Types.INTEGER);
                 pstVenta.setDouble(3, total);
                 pstVenta.setString(4, "mixto"); // Can be refined
                 pstVenta.executeUpdate();
-                
+
                 ResultSet rs = pstVenta.getGeneratedKeys();
-                if (rs.next()) idVenta = rs.getInt(1);
+                if (rs.next())
+                    idVenta = rs.getInt(1);
                 rs.close();
                 pstVenta.close();
 
@@ -283,14 +307,15 @@ public class VentasPanel extends JPanel {
                     if ("Producto".equals(type)) {
                         pstDetalle.setInt(2, idItem);
                         pstDetalle.setNull(3, java.sql.Types.INTEGER);
-                        
+
                         // Update Inventory
-                        PreparedStatement pstInv = conn.prepareStatement("UPDATE Inventario SET cantidad_actual = cantidad_actual - ? WHERE id_producto = ?");
+                        PreparedStatement pstInv = conn.prepareStatement(
+                                "UPDATE Inventario SET cantidad_actual = cantidad_actual - ? WHERE id_producto = ?");
                         pstInv.setInt(1, qty);
                         pstInv.setInt(2, idItem);
                         pstInv.executeUpdate();
                         pstInv.close();
-                        
+
                     } else {
                         pstDetalle.setNull(2, java.sql.Types.INTEGER);
                         pstDetalle.setInt(3, idItem);
@@ -323,18 +348,17 @@ public class VentasPanel extends JPanel {
                 pstPago.close();
 
                 conn.commit();
-                
+
                 // Show Ticket
                 SwingUtilities.invokeLater(() -> {
-                     new TicketWindow(
-                         SwingUtilities.getWindowAncestor(this),
-                         (String) cbCliente.getSelectedItem(),
-                         cartModel,
-                         total,
-                         metodo
-                     ).setVisible(true);
+                    new TicketWindow(
+                            SwingUtilities.getWindowAncestor(this),
+                            (String) cbCliente.getSelectedItem(),
+                            cartModel,
+                            total,
+                            metodo).setVisible(true);
                 });
-                
+
                 // JOptionPane.showMessageDialog(this, "Venta realizada con éxito");
                 clearSale();
 

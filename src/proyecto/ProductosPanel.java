@@ -43,29 +43,127 @@ public class ProductosPanel extends JPanel {
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
         add(lblTitle, BorderLayout.NORTH);
 
-        JPanel formPanel = new JPanel(new GridLayout(6, 2, 5, 5));
-        formPanel.setBorder(BorderFactory.createEmptyBorder(10, 50, 10, 50));
-        formPanel.setBackground(new Color(245, 240, 220));
+        // Header Panel with Title and Help Button
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(new Color(245, 240, 220));
+        headerPanel.add(lblTitle, BorderLayout.CENTER);
+
+        JButton btnHelp = new JButton("?");
+        btnHelp.setFont(new Font("Serif", Font.BOLD, 16));
+        btnHelp.setBackground(new Color(245, 240, 220)); // Match background
+        btnHelp.setBorder(BorderFactory.createLineBorder(TXT_MAIN));
+        btnHelp.setFocusPainted(false);
+        btnHelp.setPreferredSize(new java.awt.Dimension(30, 30));
+        btnHelp.setToolTipText("Ayuda para nuevos usuarios");
+
+        JPanel helpContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        helpContainer.setBackground(new Color(245, 240, 220));
+        helpContainer.add(btnHelp);
+        headerPanel.add(helpContainer, BorderLayout.EAST);
+
+        btnHelp.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this,
+                    "<html><body><h3>Guía Rápida:</h3>" +
+                            "<ul>" +
+                            "<li><b>Buscar:</b> Use la barra superior para filtrar productos por nombre.</li>" +
+                            "<li><b>Agregar:</b> Llene los campos y presione 'Agregar'.</li>" +
+                            "<li><b>Editar:</b> Seleccione un producto de la tabla, modifique y presione 'Actualizar'.</li>"
+                            +
+                            "<li><b>Voz:</b> Presione el micrófono para dictar en el campo seleccionado.</li>" +
+                            "</ul></body></html>",
+                    "Ayuda", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        add(headerPanel, BorderLayout.NORTH);
+
+        // Search Panel
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        searchPanel.setBackground(new Color(245, 240, 220));
+        searchPanel.add(new JLabel("Buscar Producto:"));
+        JTextField txtSearch = new JTextField(20);
+        searchPanel.add(txtSearch);
+
+        txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                filter();
+            }
+
+            private void filter() {
+                String text = txtSearch.getText();
+                javax.swing.table.TableRowSorter<DefaultTableModel> sorter = (javax.swing.table.TableRowSorter<DefaultTableModel>) table
+                        .getRowSorter();
+                if (text.trim().length() == 0) {
+                    sorter.setRowFilter(null);
+                } else {
+                    sorter.setRowFilter(javax.swing.RowFilter.regexFilter("(?i)" + text, 1));
+                }
+            }
+        });
+
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.add(searchPanel, BorderLayout.NORTH);
+
+        // Main form container - changed to BorderLayout to hold grouped panels
+        JPanel formContainer = new JPanel(new GridLayout(1, 3, 10, 0));
+        formContainer.setBackground(new Color(245, 240, 220));
+        formContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Group 1: Product Data
+        JPanel groupProducto = new JPanel(new GridLayout(4, 1, 5, 5));
+        groupProducto.setBorder(BorderFactory.createTitledBorder("Datos del Producto"));
+        groupProducto.setBackground(new Color(245, 240, 220));
 
         txtNombre = new JTextField();
+        txtNombre.setToolTipText("Ingrese el nombre comercial del producto");
         txtDescripcion = new JTextField();
-        txtPrecioVenta = new JTextField();
-        txtPrecioCompra = new JTextField();
-        txtStock = new JTextField("0");
-        txtMinimo = new JTextField("5");
+        txtDescripcion.setToolTipText("Describa brevemente el producto");
 
-        formPanel.add(new JLabel("Nombre:"));
-        formPanel.add(txtNombre);
-        formPanel.add(new JLabel("Descripción:"));
-        formPanel.add(txtDescripcion);
-        formPanel.add(new JLabel("Precio Venta:"));
-        formPanel.add(txtPrecioVenta);
-        formPanel.add(new JLabel("Precio Compra:"));
-        formPanel.add(txtPrecioCompra);
-        formPanel.add(new JLabel("Stock Actual:"));
-        formPanel.add(txtStock);
-        formPanel.add(new JLabel("Stock Mínimo:"));
-        formPanel.add(txtMinimo);
+        groupProducto.add(new JLabel("Nombre:"));
+        groupProducto.add(txtNombre);
+        groupProducto.add(new JLabel("Descripción:"));
+        groupProducto.add(txtDescripcion);
+
+        // Group 2: Pricing
+        JPanel groupPrecios = new JPanel(new GridLayout(4, 1, 5, 5));
+        groupPrecios.setBorder(BorderFactory.createTitledBorder("Precios"));
+        groupPrecios.setBackground(new Color(245, 240, 220));
+
+        txtPrecioVenta = new JTextField();
+        txtPrecioVenta.setToolTipText("Precio al público");
+        txtPrecioCompra = new JTextField();
+        txtPrecioCompra.setToolTipText("Costo de adquisición");
+
+        groupPrecios.add(new JLabel("Precio Venta:"));
+        groupPrecios.add(txtPrecioVenta);
+        groupPrecios.add(new JLabel("Precio Compra:"));
+        groupPrecios.add(txtPrecioCompra);
+
+        // Group 3: Inventory
+        JPanel groupInventario = new JPanel(new GridLayout(4, 1, 5, 5));
+        groupInventario.setBorder(BorderFactory.createTitledBorder("Inventario"));
+        groupInventario.setBackground(new Color(245, 240, 220));
+
+        txtStock = new JTextField("0");
+        txtStock.setToolTipText("Cantidad física actual");
+        txtMinimo = new JTextField("5");
+        txtMinimo.setToolTipText("Alerta de stock bajo");
+
+        groupInventario.add(new JLabel("Stock Actual:"));
+        groupInventario.add(txtStock);
+        groupInventario.add(new JLabel("Stock Mínimo:"));
+        groupInventario.add(txtMinimo);
+
+        formContainer.add(groupProducto);
+        formContainer.add(groupPrecios);
+        formContainer.add(groupInventario);
 
         String[] columnNames = { "ID", "Nombre", "Descripción", "P. Venta", "P. Compra", "Stock", "Mínimo" };
         tableModel = new DefaultTableModel(columnNames, 0) {
@@ -80,8 +178,12 @@ public class ProductosPanel extends JPanel {
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
 
+        javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(tableModel);
+        table.setRowSorter(sorter);
+
         JScrollPane scrollPane = new JScrollPane(table);
-        add(scrollPane, BorderLayout.CENTER);
+        centerPanel.add(scrollPane, BorderLayout.CENTER);
+        add(centerPanel, BorderLayout.CENTER);
 
         JPanel btnPanel = new JPanel(new FlowLayout());
         btnPanel.setBackground(new Color(245, 240, 220));
@@ -91,15 +193,18 @@ public class ProductosPanel extends JPanel {
         JButton btnDelete = createButton("Eliminar");
         JButton btnClear = createButton("Limpiar");
 
+        VoiceButton btnVoice = new VoiceButton();
+
         btnPanel.add(btnAdd);
         btnPanel.add(btnUpdate);
         btnPanel.add(btnDelete);
         btnPanel.add(btnClear);
+        btnPanel.add(btnVoice);
 
-        JPanel southContainer = new JPanel(new BorderLayout());
-        southContainer.add(formPanel, BorderLayout.CENTER);
-        southContainer.add(btnPanel, BorderLayout.SOUTH);
-        add(southContainer, BorderLayout.SOUTH);
+        JPanel mainSouthPanel = new JPanel(new BorderLayout());
+        mainSouthPanel.add(formContainer, BorderLayout.CENTER);
+        mainSouthPanel.add(btnPanel, BorderLayout.SOUTH);
+        add(mainSouthPanel, BorderLayout.SOUTH);
 
         btnAdd.addActionListener(e -> addProducto());
         btnUpdate.addActionListener(e -> updateProducto());
@@ -109,6 +214,14 @@ public class ProductosPanel extends JPanel {
         table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && table.getSelectedRow() != -1) {
                 loadSelection();
+            }
+        });
+
+        // Global Focus Tracking
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", e -> {
+            java.awt.Component c = (java.awt.Component) e.getNewValue();
+            if (c instanceof JTextField) {
+                btnVoice.setTargetComponent(c);
             }
         });
 

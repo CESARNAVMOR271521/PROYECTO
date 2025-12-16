@@ -8,19 +8,26 @@ import java.util.List;
 
 public class CompraProveedorDAO {
 
-    public boolean insertar(CompraProveedor compra) {
-        String sql = "INSERT INTO compra_proveedor (id_proveedor, total) VALUES (?, ?)";
+    public int insertar(CompraProveedor compra) {
+        String sql = "INSERT INTO compra_proveedor (id_proveedor, total, fecha) VALUES (?, ?, ?)";
         try (Connection conn = Conexion.conectar();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
             pstmt.setInt(1, compra.getIdProveedor());
             pstmt.setDouble(2, compra.getTotal());
+            pstmt.setString(3, compra.getFecha()); // Ensure date is passed
             pstmt.executeUpdate();
-            return true;
+
+            try (ResultSet generatedKeys = pstmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getInt(1);
+                }
+            }
+            return -1;
 
         } catch (SQLException e) {
             System.out.println("Error al insertar compra: " + e.getMessage());
-            return false;
+            return -1;
         }
     }
 
@@ -29,8 +36,8 @@ public class CompraProveedorDAO {
         String sql = "SELECT * FROM compra_proveedor";
 
         try (Connection conn = Conexion.conectar();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
                 CompraProveedor c = new CompraProveedor();
@@ -53,7 +60,7 @@ public class CompraProveedorDAO {
         String sql = "SELECT * FROM compra_proveedor WHERE id_proveedor = ?";
 
         try (Connection conn = Conexion.conectar();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
             pstmt.setInt(1, idProveedor);
 

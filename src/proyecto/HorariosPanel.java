@@ -37,14 +37,14 @@ public class HorariosPanel extends JPanel {
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
         add(lblTitle, BorderLayout.NORTH);
 
-        String[] columnNames = {"ID", "Fecha", "Hora", "Cliente", "Barbero", "Servicio", "Estado"};
+        String[] columnNames = { "ID", "Fecha", "Hora", "Cliente", "Barbero", "Servicio", "Estado" };
         tableModel = new DefaultTableModel(columnNames, 0);
         table = new JTable(tableModel);
         // Hide ID column
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
-        
+
         JScrollPane scrollPane = new JScrollPane(table);
         add(scrollPane, BorderLayout.CENTER);
 
@@ -57,10 +57,21 @@ public class HorariosPanel extends JPanel {
         btnPanel.add(btnDelete);
         btnPanel.add(btnRefresh);
 
+        VoiceButton btnVoice = new VoiceButton();
+        btnPanel.add(btnVoice);
+
         add(btnPanel, BorderLayout.SOUTH);
 
         btnDelete.addActionListener(e -> deleteCita());
         btnRefresh.addActionListener(e -> loadData());
+
+        // Global Focus Tracking
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", e -> {
+            java.awt.Component c = (java.awt.Component) e.getNewValue();
+            if (c instanceof javax.swing.JTextField) {
+                btnVoice.setTargetComponent(c);
+            }
+        });
 
         loadData();
     }
@@ -75,25 +86,26 @@ public class HorariosPanel extends JPanel {
 
     private void loadData() {
         tableModel.setRowCount(0);
-        String sql = "SELECT c.id_cita, c.fecha, c.hora, cl.nombre as cliente, b.nombre as barbero, s.nombre as servicio, c.estado " +
-                     "FROM Cita c " +
-                     "JOIN Cliente cl ON c.id_cliente = cl.id_cliente " +
-                     "JOIN Barbero b ON c.id_barbero = b.id_barbero " +
-                     "JOIN Servicio s ON c.id_servicio = s.id_servicio";
-                     
+        String sql = "SELECT c.id_cita, c.fecha, c.hora, cl.nombre as cliente, b.nombre as barbero, s.nombre as servicio, c.estado "
+                +
+                "FROM Cita c " +
+                "JOIN Cliente cl ON c.id_cliente = cl.id_cliente " +
+                "JOIN Barbero b ON c.id_barbero = b.id_barbero " +
+                "JOIN Servicio s ON c.id_servicio = s.id_servicio";
+
         try (Connection conn = DatabaseHelper.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                tableModel.addRow(new Object[]{
-                    rs.getInt("id_cita"),
-                    rs.getString("fecha"),
-                    rs.getString("hora"),
-                    rs.getString("cliente"),
-                    rs.getString("barbero"),
-                    rs.getString("servicio"),
-                    rs.getString("estado")
+                tableModel.addRow(new Object[] {
+                        rs.getInt("id_cita"),
+                        rs.getString("fecha"),
+                        rs.getString("hora"),
+                        rs.getString("cliente"),
+                        rs.getString("barbero"),
+                        rs.getString("servicio"),
+                        rs.getString("estado")
                 });
             }
         } catch (SQLException e) {
@@ -103,12 +115,15 @@ public class HorariosPanel extends JPanel {
 
     private void deleteCita() {
         int row = table.getSelectedRow();
-        if (row == -1) return;
+        if (row == -1)
+            return;
         int id = (int) tableModel.getValueAt(row, 0);
 
-        if (JOptionPane.showConfirmDialog(this, "¿Cancelar esta cita?", "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+        if (JOptionPane.showConfirmDialog(this, "¿Cancelar esta cita?", "Confirmar",
+                JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try (Connection conn = DatabaseHelper.connect();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE Cita SET estado='cancelado' WHERE id_cita=?")) {
+                    PreparedStatement pstmt = conn
+                            .prepareStatement("UPDATE Cita SET estado='cancelado' WHERE id_cita=?")) {
                 pstmt.setInt(1, id);
                 pstmt.executeUpdate();
                 loadData();

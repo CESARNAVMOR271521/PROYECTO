@@ -29,7 +29,7 @@ public class UsuariosPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTextField txtUsuario, txtPassword;
     private JComboBox<String> cbRol;
-    
+
     // Theme Colors
     private final Color BTN_DEFAULT = new Color(199, 179, 106);
     private final Color TXT_MAIN = new Color(60, 45, 20);
@@ -50,7 +50,7 @@ public class UsuariosPanel extends JPanel {
 
         txtUsuario = new JTextField();
         txtPassword = new JTextField();
-        cbRol = new JComboBox<>(new String[]{"admin", "barbero", "empleado"});
+        cbRol = new JComboBox<>(new String[] { "admin", "barbero", "empleado" });
 
         formPanel.add(new JLabel("Usuario:"));
         formPanel.add(txtUsuario);
@@ -59,14 +59,14 @@ public class UsuariosPanel extends JPanel {
         formPanel.add(new JLabel("Rol:"));
         formPanel.add(cbRol);
 
-        String[] columnNames = {"ID", "Usuario", "Rol"};
+        String[] columnNames = { "ID", "Usuario", "Rol" };
         tableModel = new DefaultTableModel(columnNames, 0);
         table = new JTable(tableModel);
         // Hide ID column
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
-        
+
         JScrollPane scrollPane = new JScrollPane(table);
         add(scrollPane, BorderLayout.CENTER);
 
@@ -82,6 +82,9 @@ public class UsuariosPanel extends JPanel {
         btnPanel.add(btnUpdate);
         btnPanel.add(btnDelete);
         btnPanel.add(btnClear);
+
+        VoiceButton btnVoice = new VoiceButton();
+        btnPanel.add(btnVoice);
 
         JPanel southContainer = new JPanel(new BorderLayout());
         southContainer.add(formPanel, BorderLayout.CENTER);
@@ -100,6 +103,14 @@ public class UsuariosPanel extends JPanel {
         });
 
         loadData();
+
+        // Global Focus Tracking
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", e -> {
+            java.awt.Component c = (java.awt.Component) e.getNewValue();
+            if (c instanceof JTextField) {
+                btnVoice.setTargetComponent(c);
+            }
+        });
     }
 
     private JButton createButton(String text) {
@@ -113,14 +124,14 @@ public class UsuariosPanel extends JPanel {
     private void loadData() {
         tableModel.setRowCount(0);
         try (Connection conn = DatabaseHelper.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM Usuario")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT * FROM Usuario")) {
 
             while (rs.next()) {
-                tableModel.addRow(new Object[]{
-                    rs.getInt("id_usuario"),
-                    rs.getString("nombre_usuario"),
-                    rs.getString("rol")
+                tableModel.addRow(new Object[] {
+                        rs.getInt("id_usuario"),
+                        rs.getString("nombre_usuario"),
+                        rs.getString("rol")
                 });
             }
         } catch (SQLException e) {
@@ -131,7 +142,7 @@ public class UsuariosPanel extends JPanel {
     private void addUsuario() {
         String sql = "INSERT INTO Usuario(nombre_usuario, password, rol) VALUES(?,?,?)";
         try (Connection conn = DatabaseHelper.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, txtUsuario.getText());
             pstmt.setString(2, txtPassword.getText());
             pstmt.setString(3, (String) cbRol.getSelectedItem());
@@ -145,12 +156,13 @@ public class UsuariosPanel extends JPanel {
 
     private void updateUsuario() {
         int row = table.getSelectedRow();
-        if (row == -1) return;
+        if (row == -1)
+            return;
         int id = (int) tableModel.getValueAt(row, 0);
 
         String sql = "UPDATE Usuario SET nombre_usuario=?, password=?, rol=? WHERE id_usuario=?";
         try (Connection conn = DatabaseHelper.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, txtUsuario.getText());
             pstmt.setString(2, txtPassword.getText());
             pstmt.setString(3, (String) cbRol.getSelectedItem());
@@ -165,13 +177,15 @@ public class UsuariosPanel extends JPanel {
 
     private void deleteUsuario() {
         int row = table.getSelectedRow();
-        if (row == -1) return;
+        if (row == -1)
+            return;
         int id = (int) tableModel.getValueAt(row, 0);
-        
-        if (JOptionPane.showConfirmDialog(this, "¿Seguro de eliminar?", "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+
+        if (JOptionPane.showConfirmDialog(this, "¿Seguro de eliminar?", "Confirmar",
+                JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             String sql = "DELETE FROM Usuario WHERE id_usuario=?";
             try (Connection conn = DatabaseHelper.connect();
-                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, id);
                 pstmt.executeUpdate();
                 loadData();

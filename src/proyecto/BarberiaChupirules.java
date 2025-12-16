@@ -58,8 +58,16 @@ public class BarberiaChupirules {
         DatabaseHelper.initDB();
 
         EventQueue.invokeLater(() -> {
-            BarberiaChupirules window = new BarberiaChupirules();
-            window.frame.setVisible(true);
+            // Callback que inicia la aplicación principal
+            Runnable startApp = () -> {
+                BarberiaChupirules window = new BarberiaChupirules();
+                window.frame.setVisible(true);
+            };
+
+            // Iniciar con Login
+            // LoginFrame se encargará de mostrar el Splash y luego ejecutar startApp
+            proyecto.vista.LoginFrame login = new proyecto.vista.LoginFrame(startApp);
+            login.setVisible(true);
         });
     }
 
@@ -132,7 +140,8 @@ public class BarberiaChupirules {
         addModule(menuContainer, "Facturas (F12)", "FACTURAS", new FacturasPanel(), "F12");
         // Extra modules without shortcuts for now, or could use Shift+F1 etc.
         addModule(menuContainer, "Proveedores", "PROVEEDORES", new ProveedoresPanel(), null);
-        addModule(menuContainer, "Compras", "COMPRAS", createPanel("Compras a Proveedores"), null);
+        addModule(menuContainer, "Compras", "COMPRAS", new ComprasPanel(), null);
+        addModule(menuContainer, "Voz (Logs)", "VOZ_LOGS", new RegistroVozPanel(), null);
 
         // FOOTER SALIR
         JPanel footer = new JPanel();
@@ -225,16 +234,5 @@ public class BarberiaChupirules {
     }
 
     // ✨ PANEL DEL CONTENIDO CENTRAL
-    private JPanel createPanel(String title) {
-        JPanel p = new JPanel(new BorderLayout());
-        p.setBackground(BG_PANEL);
 
-        JLabel lbl = new JLabel(title);
-        lbl.setFont(new Font("Serif", Font.BOLD, 30));
-        lbl.setForeground(TXT_MAIN);
-        lbl.setHorizontalAlignment(SwingConstants.CENTER);
-
-        p.add(lbl, BorderLayout.CENTER);
-        return p;
-    }
 }

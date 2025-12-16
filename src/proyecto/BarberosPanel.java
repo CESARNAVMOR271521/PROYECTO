@@ -29,7 +29,7 @@ public class BarberosPanel extends JPanel {
     private DefaultTableModel tableModel;
     private JTextField txtNombre, txtEspecialidades;
     private JCheckBox chkActivo;
-    
+
     private final Color BTN_DEFAULT = new Color(199, 179, 106);
     private final Color TXT_MAIN = new Color(60, 45, 20);
 
@@ -60,7 +60,7 @@ public class BarberosPanel extends JPanel {
         formPanel.add(new JLabel("Estado:"));
         formPanel.add(chkActivo);
 
-        String[] columnNames = {"ID", "Nombre", "Especialidades", "Activo"};
+        String[] columnNames = { "ID", "Nombre", "Especialidades", "Activo" };
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public Class<?> getColumnClass(int columnIndex) {
@@ -72,7 +72,7 @@ public class BarberosPanel extends JPanel {
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
-        
+
         JScrollPane scrollPane = new JScrollPane(table);
         add(scrollPane, BorderLayout.CENTER);
 
@@ -84,10 +84,13 @@ public class BarberosPanel extends JPanel {
         JButton btnDelete = createButton("Eliminar");
         JButton btnClear = createButton("Limpiar");
 
+        VoiceButton btnVoice = new VoiceButton();
+
         btnPanel.add(btnAdd);
         btnPanel.add(btnUpdate);
         btnPanel.add(btnDelete);
         btnPanel.add(btnClear);
+        btnPanel.add(btnVoice);
 
         JPanel southContainer = new JPanel(new BorderLayout());
         southContainer.add(formPanel, BorderLayout.CENTER);
@@ -105,6 +108,14 @@ public class BarberosPanel extends JPanel {
             }
         });
 
+        // Global Focus Tracking
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", e -> {
+            java.awt.Component c = (java.awt.Component) e.getNewValue();
+            if (c instanceof JTextField) {
+                btnVoice.setTargetComponent(c);
+            }
+        });
+
         loadData();
     }
 
@@ -119,15 +130,15 @@ public class BarberosPanel extends JPanel {
     private void loadData() {
         tableModel.setRowCount(0);
         try (Connection conn = DatabaseHelper.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM Barbero")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT * FROM Barbero")) {
 
             while (rs.next()) {
-                tableModel.addRow(new Object[]{
-                    rs.getInt("id_barbero"),
-                    rs.getString("nombre"),
-                    rs.getString("especialidades"),
-                    rs.getInt("activo") == 1
+                tableModel.addRow(new Object[] {
+                        rs.getInt("id_barbero"),
+                        rs.getString("nombre"),
+                        rs.getString("especialidades"),
+                        rs.getInt("activo") == 1
                 });
             }
         } catch (SQLException e) {
@@ -138,7 +149,7 @@ public class BarberosPanel extends JPanel {
     private void addBarbero() {
         String sql = "INSERT INTO Barbero(nombre, especialidades, activo) VALUES(?,?,?)";
         try (Connection conn = DatabaseHelper.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, txtNombre.getText());
             pstmt.setString(2, txtEspecialidades.getText());
             pstmt.setInt(3, chkActivo.isSelected() ? 1 : 0);
@@ -152,12 +163,13 @@ public class BarberosPanel extends JPanel {
 
     private void updateBarbero() {
         int row = table.getSelectedRow();
-        if (row == -1) return;
+        if (row == -1)
+            return;
         int id = (int) tableModel.getValueAt(row, 0);
         String sql = "UPDATE Barbero SET nombre=?, especialidades=?, activo=? WHERE id_barbero=?";
 
         try (Connection conn = DatabaseHelper.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, txtNombre.getText());
             pstmt.setString(2, txtEspecialidades.getText());
             pstmt.setInt(3, chkActivo.isSelected() ? 1 : 0);
@@ -172,13 +184,15 @@ public class BarberosPanel extends JPanel {
 
     private void deleteBarbero() {
         int row = table.getSelectedRow();
-        if (row == -1) return;
+        if (row == -1)
+            return;
         int id = (int) tableModel.getValueAt(row, 0);
-        
-        if (JOptionPane.showConfirmDialog(this, "¿Seguro de eliminar?", "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+
+        if (JOptionPane.showConfirmDialog(this, "¿Seguro de eliminar?", "Confirmar",
+                JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             String sql = "DELETE FROM Barbero WHERE id_barbero=?";
             try (Connection conn = DatabaseHelper.connect();
-                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, id);
                 pstmt.executeUpdate();
                 loadData();
@@ -192,7 +206,8 @@ public class BarberosPanel extends JPanel {
     private void loadSelection() {
         int row = table.getSelectedRow();
         txtNombre.setText(tableModel.getValueAt(row, 1).toString());
-        txtEspecialidades.setText(tableModel.getValueAt(row, 2) != null ? tableModel.getValueAt(row, 2).toString() : "");
+        txtEspecialidades
+                .setText(tableModel.getValueAt(row, 2) != null ? tableModel.getValueAt(row, 2).toString() : "");
         chkActivo.setSelected((Boolean) tableModel.getValueAt(row, 3));
     }
 

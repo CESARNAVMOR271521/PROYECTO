@@ -99,6 +99,9 @@ public class PagosPanel extends JPanel {
         JButton btnAnular = createButton("Anular Pago");
         actionPanel.add(btnAnular);
 
+        VoiceButton btnVoice = new VoiceButton();
+        actionPanel.add(btnVoice);
+
         add(actionPanel, BorderLayout.SOUTH);
 
         // Listeners
@@ -114,6 +117,14 @@ public class PagosPanel extends JPanel {
         cbFiltroMetodo.addActionListener(e -> filterData(sorter));
 
         btnAnular.addActionListener(e -> anularPago());
+
+        // Global Focus Tracking
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", e -> {
+            java.awt.Component c = (java.awt.Component) e.getNewValue();
+            if (c instanceof JTextField) {
+                btnVoice.setTargetComponent(c);
+            }
+        });
 
         // Initial Load
         loadData();

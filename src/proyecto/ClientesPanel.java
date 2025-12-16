@@ -28,7 +28,7 @@ public class ClientesPanel extends JPanel {
     private JTable table;
     private DefaultTableModel tableModel;
     private JTextField txtNombre, txtTelefono, txtCorreo, txtHistorial;
-    
+
     // Theme Colors (Reusing Godhome Theme)
     private final Color BTN_DEFAULT = new Color(199, 179, 106);
     private final Color TXT_MAIN = new Color(60, 45, 20);
@@ -66,14 +66,14 @@ public class ClientesPanel extends JPanel {
         add(formPanel, BorderLayout.SOUTH); // Place form at bottom initially or wrapped in another panel
 
         // Table Panel
-        String[] columnNames = {"ID", "Nombre", "Teléfono", "Correo", "Historial"};
+        String[] columnNames = { "ID", "Nombre", "Teléfono", "Correo", "Historial" };
         tableModel = new DefaultTableModel(columnNames, 0);
         table = new JTable(tableModel);
         // Hide ID column
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
-        
+
         JScrollPane scrollPane = new JScrollPane(table);
         add(scrollPane, BorderLayout.CENTER);
 
@@ -86,10 +86,13 @@ public class ClientesPanel extends JPanel {
         JButton btnDelete = createButton("Eliminar");
         JButton btnClear = createButton("Limpiar");
 
+        VoiceButton btnVoice = new VoiceButton(); // New Voice Button
+
         btnPanel.add(btnAdd);
         btnPanel.add(btnUpdate);
         btnPanel.add(btnDelete);
         btnPanel.add(btnClear);
+        btnPanel.add(btnVoice); // Add to panel
 
         // Layout adjustment for Form and Buttons
         JPanel southContainer = new JPanel(new BorderLayout());
@@ -102,10 +105,18 @@ public class ClientesPanel extends JPanel {
         btnUpdate.addActionListener(e -> updateCliente());
         btnDelete.addActionListener(e -> deleteCliente());
         btnClear.addActionListener(e -> clearForm());
-        
+
         table.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting() && table.getSelectedRow() != -1) {
                 loadSelection();
+            }
+        });
+
+        // Global Focus Tracking
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", e -> {
+            java.awt.Component c = (java.awt.Component) e.getNewValue();
+            if (c instanceof JTextField) {
+                btnVoice.setTargetComponent(c);
             }
         });
 
@@ -123,16 +134,16 @@ public class ClientesPanel extends JPanel {
     private void loadData() {
         tableModel.setRowCount(0);
         try (Connection conn = DatabaseHelper.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM Cliente")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT * FROM Cliente")) {
 
             while (rs.next()) {
-                tableModel.addRow(new Object[]{
-                    rs.getInt("id_cliente"),
-                    rs.getString("nombre"),
-                    rs.getString("telefono"),
-                    rs.getString("correo"),
-                    rs.getString("historial")
+                tableModel.addRow(new Object[] {
+                        rs.getInt("id_cliente"),
+                        rs.getString("nombre"),
+                        rs.getString("telefono"),
+                        rs.getString("correo"),
+                        rs.getString("historial")
                 });
             }
         } catch (SQLException e) {
@@ -143,7 +154,7 @@ public class ClientesPanel extends JPanel {
     private void addCliente() {
         String sql = "INSERT INTO Cliente(nombre, telefono, correo, historial) VALUES(?,?,?,?)";
         try (Connection conn = DatabaseHelper.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, txtNombre.getText());
             pstmt.setString(2, txtTelefono.getText());
             pstmt.setString(3, txtCorreo.getText());
@@ -158,12 +169,13 @@ public class ClientesPanel extends JPanel {
 
     private void updateCliente() {
         int row = table.getSelectedRow();
-        if (row == -1) return;
+        if (row == -1)
+            return;
         int id = (int) tableModel.getValueAt(row, 0);
         String sql = "UPDATE Cliente SET nombre=?, telefono=?, correo=?, historial=? WHERE id_cliente=?";
 
         try (Connection conn = DatabaseHelper.connect();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, txtNombre.getText());
             pstmt.setString(2, txtTelefono.getText());
             pstmt.setString(3, txtCorreo.getText());
@@ -179,13 +191,15 @@ public class ClientesPanel extends JPanel {
 
     private void deleteCliente() {
         int row = table.getSelectedRow();
-        if (row == -1) return;
+        if (row == -1)
+            return;
         int id = (int) tableModel.getValueAt(row, 0);
         String sql = "DELETE FROM Cliente WHERE id_cliente=?";
 
-        if (JOptionPane.showConfirmDialog(this, "¿Seguro de eliminar?", "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+        if (JOptionPane.showConfirmDialog(this, "¿Seguro de eliminar?", "Confirmar",
+                JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             try (Connection conn = DatabaseHelper.connect();
-                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, id);
                 pstmt.executeUpdate();
                 loadData();

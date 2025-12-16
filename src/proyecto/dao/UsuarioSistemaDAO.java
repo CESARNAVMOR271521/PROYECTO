@@ -9,9 +9,9 @@ import java.util.List;
 public class UsuarioSistemaDAO {
 
     public boolean insertar(UsuarioSistema usuario) {
-        String sql = "INSERT INTO usuario_sistema (nombre, usuario, password, rol) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO Usuario (nombre, usuario, password, rol) VALUES (?, ?, ?, ?)";
         try (Connection conn = Conexion.conectar();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, usuario.getNombre());
             pstmt.setString(2, usuario.getUsuario());
             pstmt.setString(3, usuario.getPassword());
@@ -25,9 +25,9 @@ public class UsuarioSistemaDAO {
     }
 
     public UsuarioSistema login(String usuario, String password) {
-        String sql = "SELECT * FROM usuario_sistema WHERE usuario = ? AND password = ?";
+        String sql = "SELECT * FROM Usuario WHERE usuario = ? AND password = ?";
         try (Connection conn = Conexion.conectar();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, usuario);
             pstmt.setString(2, password);
             try (ResultSet rs = pstmt.executeQuery()) {

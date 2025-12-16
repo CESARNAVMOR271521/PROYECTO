@@ -11,7 +11,7 @@ public class InventarioDAO {
     public boolean insertar(Inventario inventario) {
         String sql = "INSERT INTO inventario (id_producto, cantidad_actual, minimo) VALUES (?, ?, ?)";
         try (Connection conn = Conexion.conectar();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, inventario.getIdProducto());
             pstmt.setInt(2, inventario.getStock());
             pstmt.setInt(3, inventario.getStockMinimo());
@@ -27,8 +27,8 @@ public class InventarioDAO {
         List<Inventario> lista = new ArrayList<>();
         String sql = "SELECT * FROM inventario";
         try (Connection conn = Conexion.conectar();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) {
                 Inventario i = new Inventario();
                 i.setIdInventario(rs.getInt("id_inventario"));
@@ -46,7 +46,7 @@ public class InventarioDAO {
     public boolean actualizarStock(int idProducto, int cantidad) {
         String sql = "UPDATE inventario SET cantidad_actual = ? WHERE id_producto = ?";
         try (Connection conn = Conexion.conectar();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, cantidad);
             pstmt.setInt(2, idProducto);
             pstmt.executeUpdate();
@@ -57,10 +57,24 @@ public class InventarioDAO {
         }
     }
 
+    public boolean incrementarStock(int idProducto, int cantidad) {
+        String sql = "UPDATE inventario SET cantidad_actual = cantidad_actual + ? WHERE id_producto = ?";
+        try (Connection conn = Conexion.conectar();
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, cantidad);
+            pstmt.setInt(2, idProducto);
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            System.out.println("Error al incrementar stock: " + e.getMessage());
+            return false;
+        }
+    }
+
     public Inventario obtenerPorProducto(int idProducto) {
         String sql = "SELECT * FROM inventario WHERE id_producto = ?";
         try (Connection conn = Conexion.conectar();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, idProducto);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {

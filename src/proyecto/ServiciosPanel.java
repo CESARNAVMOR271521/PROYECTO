@@ -27,7 +27,7 @@ public class ServiciosPanel extends JPanel {
     private JTable table;
     private DefaultTableModel tableModel;
     private JTextField txtNombre, txtDescripcion, txtPrecio;
-    
+
     private final Color BTN_DEFAULT = new Color(199, 179, 106);
     private final Color TXT_MAIN = new Color(60, 45, 20);
 
@@ -56,14 +56,14 @@ public class ServiciosPanel extends JPanel {
         formPanel.add(new JLabel("Precio:"));
         formPanel.add(txtPrecio);
 
-        String[] columnNames = {"ID", "Nombre", "Descripción", "Precio"};
+        String[] columnNames = { "ID", "Nombre", "Descripción", "Precio" };
         tableModel = new DefaultTableModel(columnNames, 0);
         table = new JTable(tableModel);
         // Hide ID column
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
-        
+
         JScrollPane scrollPane = new JScrollPane(table);
         add(scrollPane, BorderLayout.CENTER);
 
@@ -79,6 +79,9 @@ public class ServiciosPanel extends JPanel {
         btnPanel.add(btnUpdate);
         btnPanel.add(btnDelete);
         btnPanel.add(btnClear);
+
+        VoiceButton btnVoice = new VoiceButton();
+        btnPanel.add(btnVoice);
 
         JPanel southContainer = new JPanel(new BorderLayout());
         southContainer.add(formPanel, BorderLayout.CENTER);
@@ -97,6 +100,14 @@ public class ServiciosPanel extends JPanel {
         });
 
         loadData();
+
+        // Global Focus Tracking
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", e -> {
+            java.awt.Component c = (java.awt.Component) e.getNewValue();
+            if (c instanceof JTextField) {
+                btnVoice.setTargetComponent(c);
+            }
+        });
     }
 
     private JButton createButton(String text) {
@@ -110,15 +121,15 @@ public class ServiciosPanel extends JPanel {
     private void loadData() {
         tableModel.setRowCount(0);
         try (Connection conn = DatabaseHelper.connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM Servicio")) {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = stmt.executeQuery("SELECT * FROM Servicio")) {
 
             while (rs.next()) {
-                tableModel.addRow(new Object[]{
-                    rs.getInt("id_servicio"),
-                    rs.getString("nombre"),
-                    rs.getString("descripcion"),
-                    rs.getDouble("precio")
+                tableModel.addRow(new Object[] {
+                        rs.getInt("id_servicio"),
+                        rs.getString("nombre"),
+                        rs.getString("descripcion"),
+                        rs.getDouble("precio")
                 });
             }
         } catch (SQLException e) {
@@ -131,7 +142,7 @@ public class ServiciosPanel extends JPanel {
             double precio = Double.parseDouble(txtPrecio.getText());
             String sql = "INSERT INTO Servicio(nombre, descripcion, precio) VALUES(?,?,?)";
             try (Connection conn = DatabaseHelper.connect();
-                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, txtNombre.getText());
                 pstmt.setString(2, txtDescripcion.getText());
                 pstmt.setDouble(3, precio);
@@ -148,14 +159,15 @@ public class ServiciosPanel extends JPanel {
 
     private void updateServicio() {
         int row = table.getSelectedRow();
-        if (row == -1) return;
+        if (row == -1)
+            return;
         int id = (int) tableModel.getValueAt(row, 0);
-        
+
         try {
             double precio = Double.parseDouble(txtPrecio.getText());
             String sql = "UPDATE Servicio SET nombre=?, descripcion=?, precio=? WHERE id_servicio=?";
             try (Connection conn = DatabaseHelper.connect();
-                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, txtNombre.getText());
                 pstmt.setString(2, txtDescripcion.getText());
                 pstmt.setDouble(3, precio);
@@ -173,13 +185,15 @@ public class ServiciosPanel extends JPanel {
 
     private void deleteServicio() {
         int row = table.getSelectedRow();
-        if (row == -1) return;
+        if (row == -1)
+            return;
         int id = (int) tableModel.getValueAt(row, 0);
-        
-        if (JOptionPane.showConfirmDialog(this, "¿Seguro de eliminar?", "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+
+        if (JOptionPane.showConfirmDialog(this, "¿Seguro de eliminar?", "Confirmar",
+                JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
             String sql = "DELETE FROM Servicio WHERE id_servicio=?";
             try (Connection conn = DatabaseHelper.connect();
-                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                    PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, id);
                 pstmt.executeUpdate();
                 loadData();

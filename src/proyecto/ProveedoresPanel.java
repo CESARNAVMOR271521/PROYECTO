@@ -35,7 +35,7 @@ public class ProveedoresPanel extends JPanel {
     private DefaultTableModel modelProveedores;
 
     private JLabel lblNombre, lblTelefono, lblCorreo;
-    
+
     private JTable tableHistorial;
     private DefaultTableModel modelHistorial;
 
@@ -61,15 +61,16 @@ public class ProveedoresPanel extends JPanel {
         JPanel panelList = new JPanel(new BorderLayout());
         panelList.setBackground(BG_PANEL);
         panelList.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(BORDER_GOD, 2), "Proveedores Registrados"
-        ));
+                BorderFactory.createLineBorder(BORDER_GOD, 2), "Proveedores Registrados"));
 
-        modelProveedores = new DefaultTableModel(new Object[]{"ID", "Nombre"}, 0) {
+        modelProveedores = new DefaultTableModel(new Object[] { "ID", "Nombre" }, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
         tableProveedores = new JTable(modelProveedores);
-        
+
         // Hide ID (0)
         tableProveedores.getColumnModel().getColumn(0).setMinWidth(0);
         tableProveedores.getColumnModel().getColumn(0).setMaxWidth(0);
@@ -78,6 +79,13 @@ public class ProveedoresPanel extends JPanel {
         tableProveedores.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tableProveedores.setBackground(Color.WHITE);
         panelList.add(new JScrollPane(tableProveedores), BorderLayout.CENTER);
+
+        // Voice Button Panel
+        JPanel btnPanel = new JPanel(new FlowLayout());
+        btnPanel.setBackground(BG_PANEL);
+        VoiceButton btnVoice = new VoiceButton();
+        btnPanel.add(btnVoice);
+        panelList.add(btnPanel, BorderLayout.SOUTH);
 
         // Click listener
         tableProveedores.addMouseListener(new MouseAdapter() {
@@ -102,22 +110,22 @@ public class ProveedoresPanel extends JPanel {
         JPanel pnlInfo = new JPanel(new GridLayout(4, 2, 10, 10));
         pnlInfo.setBackground(BG_PANEL);
         pnlInfo.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        
+
         lblNombre = new JLabel("-");
         lblTelefono = new JLabel("-");
         lblCorreo = new JLabel("-");
-        
+
         addInfoRow(pnlInfo, "Nombre:", lblNombre);
         addInfoRow(pnlInfo, "Teléfono:", lblTelefono);
         addInfoRow(pnlInfo, "Correo:", lblCorreo);
-        
+
         tabbedPane.addTab("Información General", pnlInfo);
 
         // Tab 2: Historial (Entregas/Compras)
         JPanel pnlHistorial = new JPanel(new BorderLayout());
-        modelHistorial = new DefaultTableModel(new Object[]{"ID Compra", "Fecha", "Total"}, 0);
+        modelHistorial = new DefaultTableModel(new Object[] { "ID Compra", "Fecha", "Total" }, 0);
         tableHistorial = new JTable(modelHistorial);
-        
+
         // Hide ID Compra (0)
         tableHistorial.getColumnModel().getColumn(0).setMinWidth(0);
         tableHistorial.getColumnModel().getColumn(0).setMaxWidth(0);
@@ -128,7 +136,8 @@ public class ProveedoresPanel extends JPanel {
 
         // Tab 3: Inventario (Productos de este proveedor)
         JPanel pnlInventario = new JPanel(new BorderLayout());
-        modelInventario = new DefaultTableModel(new Object[]{"Producto", "Precio Compra", "Precio Venta", "Stock Actual", "Minimo"}, 0);
+        modelInventario = new DefaultTableModel(
+                new Object[] { "Producto", "Precio Compra", "Precio Venta", "Stock Actual", "Minimo" }, 0);
         tableInventario = new JTable(modelInventario);
         pnlInventario.add(new JScrollPane(tableInventario), BorderLayout.CENTER);
         tabbedPane.addTab("Inventario por Proveedor", pnlInventario);
@@ -136,6 +145,14 @@ public class ProveedoresPanel extends JPanel {
         splitPane.setRightComponent(tabbedPane);
 
         cargarProveedores();
+
+        // Global Focus Tracking (For consistency, though no fields here currently)
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", e -> {
+            java.awt.Component c = (java.awt.Component) e.getNewValue();
+            if (c instanceof javax.swing.JTextField) {
+                btnVoice.setTargetComponent(c);
+            }
+        });
     }
 
     private void addInfoRow(JPanel p, String label, JLabel value) {
@@ -152,7 +169,7 @@ public class ProveedoresPanel extends JPanel {
         modelProveedores.setRowCount(0);
         List<Proveedor> lista = proveedorDAO.listar();
         for (Proveedor p : lista) {
-            modelProveedores.addRow(new Object[]{p.getIdProveedor(), p.getNombre()});
+            modelProveedores.addRow(new Object[] { p.getIdProveedor(), p.getNombre() });
         }
     }
 
@@ -166,7 +183,7 @@ public class ProveedoresPanel extends JPanel {
                 break;
             }
         }
-        
+
         if (seleccionado != null) {
             lblNombre.setText(seleccionado.getNombre());
             lblTelefono.setText(seleccionado.getTelefono());
@@ -177,10 +194,10 @@ public class ProveedoresPanel extends JPanel {
         modelHistorial.setRowCount(0);
         List<CompraProveedor> compras = compraDAO.listarPorProveedor(idProveedor);
         for (CompraProveedor c : compras) {
-            modelHistorial.addRow(new Object[]{
-                c.getIdCompra(),
-                c.getFecha(),
-                String.format("$%.2f", c.getTotal())
+            modelHistorial.addRow(new Object[] {
+                    c.getIdCompra(),
+                    c.getFecha(),
+                    String.format("$%.2f", c.getTotal())
             });
         }
 
@@ -192,12 +209,12 @@ public class ProveedoresPanel extends JPanel {
             int stock = (inv != null) ? inv.getStock() : 0;
             int min = (inv != null) ? inv.getStockMinimo() : 0;
 
-            modelInventario.addRow(new Object[]{
-                prod.getNombre(),
-                String.format("$%.2f", prod.getPrecioCompra()),
-                String.format("$%.2f", prod.getPrecioVenta()),
-                stock,
-                min
+            modelInventario.addRow(new Object[] {
+                    prod.getNombre(),
+                    String.format("$%.2f", prod.getPrecioCompra()),
+                    String.format("$%.2f", prod.getPrecioVenta()),
+                    stock,
+                    min
             });
         }
     }

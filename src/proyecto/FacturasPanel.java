@@ -17,6 +17,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
 
@@ -35,7 +36,7 @@ public class FacturasPanel extends JPanel {
     private DefaultTableModel model;
     private FacturaDAO facturaDAO;
     private DetalleVentaDAO detalleDAO;
-    
+
     // Using same colors as other panels for consistency
     private final Color BTN_DEFAULT = new Color(199, 179, 106);
     private final Color TXT_MAIN = new Color(60, 45, 20);
@@ -43,7 +44,7 @@ public class FacturasPanel extends JPanel {
     public FacturasPanel() {
         this.facturaDAO = new FacturaDAO();
         this.detalleDAO = new DetalleVentaDAO();
-        
+
         setLayout(new BorderLayout(10, 10));
         setBackground(new Color(245, 240, 220));
 
@@ -54,7 +55,7 @@ public class FacturasPanel extends JPanel {
         add(lblTitle, BorderLayout.NORTH);
 
         // Table
-        String[] columns = {"ID Factura", "ID Venta", "Fecha", "Cliente", "Total"};
+        String[] columns = { "ID Factura", "ID Venta", "Fecha", "Cliente", "Total" };
         model = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -62,12 +63,12 @@ public class FacturasPanel extends JPanel {
             }
         };
         table = new JTable(model);
-        
+
         // Hide ID Factura (0) and ID Venta (1)
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
-        
+
         table.getColumnModel().getColumn(1).setMinWidth(0);
         table.getColumnModel().getColumn(1).setMaxWidth(0);
         table.getColumnModel().getColumn(1).setWidth(0);
@@ -78,20 +79,31 @@ public class FacturasPanel extends JPanel {
         // Buttons
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         btnPanel.setBackground(new Color(245, 240, 220));
-        
+
         JButton btnPrint = new JButton("Imprimir PDF");
         btnPrint.setBackground(BTN_DEFAULT);
         btnPrint.setForeground(TXT_MAIN);
         btnPrint.addActionListener(e -> printSelectedFactura());
-        
+
         JButton btnRefresh = new JButton("Actualizar");
         btnRefresh.setBackground(BTN_DEFAULT);
         btnRefresh.setForeground(TXT_MAIN);
         btnRefresh.addActionListener(e -> loadFacturas());
 
+        VoiceButton btnVoice = new VoiceButton();
+
         btnPanel.add(btnRefresh);
         btnPanel.add(btnPrint);
+        btnPanel.add(btnVoice);
         add(btnPanel, BorderLayout.SOUTH);
+
+        // Global Focus Tracking
+        java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", e -> {
+            java.awt.Component c = (java.awt.Component) e.getNewValue();
+            if (c instanceof JTextField) {
+                btnVoice.setTargetComponent(c);
+            }
+        });
 
         loadFacturas();
     }
@@ -100,12 +112,12 @@ public class FacturasPanel extends JPanel {
         model.setRowCount(0);
         List<Map<String, Object>> facturas = facturaDAO.listarConCliente();
         for (Map<String, Object> f : facturas) {
-            model.addRow(new Object[]{
-                f.get("id_factura"),
-                f.get("id_venta"),
-                f.get("fecha"),
-                f.get("cliente"),
-                f.get("total")
+            model.addRow(new Object[] {
+                    f.get("id_factura"),
+                    f.get("id_venta"),
+                    f.get("fecha"),
+                    f.get("cliente"),
+                    f.get("total")
             });
         }
     }
@@ -135,7 +147,8 @@ public class FacturasPanel extends JPanel {
 
             // Header
             Font titleFont = new Font(Font.SANS_SERIF, 18, Font.BOLD);
-            Paragraph title = new Paragraph("BARBERÍA CHUPIRULES - FACTURA", new com.itextpdf.text.Font(com.itextpdf.text.Font.FontFamily.HELVETICA, 18, com.itextpdf.text.Font.BOLD));
+            Paragraph title = new Paragraph("BARBERÍA CHUPIRULES - FACTURA", new com.itextpdf.text.Font(
+                    com.itextpdf.text.Font.FontFamily.HELVETICA, 18, com.itextpdf.text.Font.BOLD));
             title.setAlignment(com.itextpdf.text.Element.ALIGN_CENTER);
             document.add(title);
             document.add(new Paragraph(" ")); // Spacer
@@ -154,10 +167,10 @@ public class FacturasPanel extends JPanel {
             pdfTable.addCell("Subtotal");
 
             List<DetalleVenta> detalles = detalleDAO.listarPorVenta(idVenta);
-            
+
             for (DetalleVenta d : detalles) {
                 String itemName = getItemName(d.getTipoItem(), d.getIdItem());
-                
+
                 pdfTable.addCell(String.valueOf(d.getCantidad()));
                 pdfTable.addCell(itemName);
                 pdfTable.addCell(String.format("$%.2f", d.getPrecioUnitario()));
@@ -166,7 +179,7 @@ public class FacturasPanel extends JPanel {
 
             document.add(pdfTable);
             document.add(new Paragraph(" "));
-            
+
             // Total
             Paragraph pTotal = new Paragraph("TOTAL: $" + String.format("%.2f", total));
             pTotal.setAlignment(com.itextpdf.text.Element.ALIGN_RIGHT);
@@ -174,7 +187,7 @@ public class FacturasPanel extends JPanel {
 
             document.close();
             JOptionPane.showMessageDialog(this, "Factura generada: " + filename);
-            
+
             // Try to open the file
             try {
                 java.awt.Desktop.getDesktop().open(new java.io.File(filename));
@@ -198,7 +211,7 @@ public class FacturasPanel extends JPanel {
         }
 
         try (Connection conn = Conexion.conectar();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, id);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
