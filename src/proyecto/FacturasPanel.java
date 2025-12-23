@@ -20,6 +20,10 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
+import javax.swing.RowFilter;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
 
 import com.itextpdf.text.Document;
 import com.itextpdf.text.Paragraph;
@@ -34,6 +38,7 @@ public class FacturasPanel extends JPanel {
 
     private JTable table;
     private DefaultTableModel model;
+    private JTextField txtBuscar;
     private FacturaDAO facturaDAO;
     private DetalleVentaDAO detalleDAO;
 
@@ -48,11 +53,24 @@ public class FacturasPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBackground(new Color(245, 240, 220));
 
+        // Header
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(new Color(245, 240, 220));
+
         JLabel lblTitle = new JLabel("Gestión de Facturas");
         lblTitle.setFont(new Font("Serif", Font.BOLD, 24));
         lblTitle.setForeground(TXT_MAIN);
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        add(lblTitle, BorderLayout.NORTH);
+        headerPanel.add(lblTitle, BorderLayout.NORTH);
+
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        searchPanel.setBackground(new Color(245, 240, 220));
+        searchPanel.add(new JLabel("Buscar:"));
+        txtBuscar = new JTextField(20);
+        searchPanel.add(txtBuscar);
+        headerPanel.add(searchPanel, BorderLayout.SOUTH);
+
+        add(headerPanel, BorderLayout.NORTH);
 
         // Table
         String[] columns = { "ID Factura", "ID Venta", "Fecha", "Cliente", "Total" };
@@ -75,6 +93,24 @@ public class FacturasPanel extends JPanel {
 
         JScrollPane scrollPane = new JScrollPane(table);
         add(scrollPane, BorderLayout.CENTER);
+
+        // Sorting
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(model);
+        table.setRowSorter(sorter);
+
+        txtBuscar.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { filter(); }
+            public void removeUpdate(DocumentEvent e) { filter(); }
+            public void changedUpdate(DocumentEvent e) { filter(); }
+            private void filter() {
+                String text = txtBuscar.getText();
+                if (text.trim().length() == 0) {
+                    sorter.setRowFilter(null);
+                } else {
+                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
+                }
+            }
+        });
 
         // Buttons
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));

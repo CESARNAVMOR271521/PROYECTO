@@ -27,7 +27,24 @@ public class ReconocimientoVoz {
 
         try {
             // Cargar el modelo
-            String modelPath = "vosk-model-small-es-0.42";
+            String[] possiblePaths = {
+                "vosk-model-small-es-0.42",
+                "../vosk-model-small-es-0.42",
+                "src/vosk-model-small-es-0.42"
+            };
+            
+            String modelPath = null;
+            for (String path : possiblePaths) {
+                if (new java.io.File(path).exists()) {
+                    modelPath = path;
+                    break;
+                }
+            }
+
+            if (modelPath == null) {
+                throw new java.io.IOException("No se encontró la carpeta del modelo 'vosk-model-small-es-0.42' en el directorio: " + new java.io.File(".").getAbsolutePath());
+            }
+
             System.out.println("Cargando modelo de voz desde: " + new java.io.File(modelPath).getAbsolutePath());
             model = new Model(modelPath);
             System.out.println("Modelo cargado correctamente.");

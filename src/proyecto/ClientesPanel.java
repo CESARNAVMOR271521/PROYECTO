@@ -22,12 +22,17 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
+import javax.swing.RowFilter;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
 
 public class ClientesPanel extends JPanel {
 
     private JTable table;
     private DefaultTableModel tableModel;
-    private JTextField txtNombre, txtTelefono, txtCorreo, txtHistorial;
+    private DefaultTableModel tableModel1;
+    private JTextField txtNombre, txtTelefono, txtCorreo, txtHistorial, txtBuscar;
 
     // Theme Colors (Reusing Godhome Theme)
     private final Color BTN_DEFAULT = new Color(199, 179, 106);
@@ -37,12 +42,26 @@ public class ClientesPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBackground(new Color(245, 240, 220));
 
+        // Header Panel
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(new Color(245, 240, 220));
+
         // Title
         JLabel lblTitle = new JLabel("Gestión de Clientes");
         lblTitle.setFont(new Font("Serif", Font.BOLD, 24));
         lblTitle.setForeground(TXT_MAIN);
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        add(lblTitle, BorderLayout.NORTH);
+        headerPanel.add(lblTitle, BorderLayout.NORTH);
+
+        // Search Bar
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        searchPanel.setBackground(new Color(245, 240, 220));
+        searchPanel.add(new JLabel("Buscar:"));
+        txtBuscar = new JTextField(20);
+        searchPanel.add(txtBuscar);
+        headerPanel.add(searchPanel, BorderLayout.SOUTH);
+
+        add(headerPanel, BorderLayout.NORTH);
 
         // Form Panel
         JPanel formPanel = new JPanel(new GridLayout(4, 2, 5, 5));
@@ -76,6 +95,24 @@ public class ClientesPanel extends JPanel {
 
         JScrollPane scrollPane = new JScrollPane(table);
         add(scrollPane, BorderLayout.CENTER);
+
+        // Table Sorter
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModel);
+        table.setRowSorter(sorter);
+
+        txtBuscar.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { filter(); }
+            public void removeUpdate(DocumentEvent e) { filter(); }
+            public void changedUpdate(DocumentEvent e) { filter(); }
+            private void filter() {
+                String text = txtBuscar.getText();
+                if (text.trim().length() == 0) {
+                    sorter.setRowFilter(null);
+                } else {
+                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
+                }
+            }
+        });
 
         // Buttons Panel
         JPanel btnPanel = new JPanel(new FlowLayout());

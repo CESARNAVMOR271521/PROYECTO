@@ -9,13 +9,14 @@ import java.util.List;
 public class UsuarioSistemaDAO {
 
     public boolean insertar(UsuarioSistema usuario) {
-        String sql = "INSERT INTO Usuario (nombre, usuario, password, rol) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO Usuario (nombre_usuario, password, rol) VALUES (?, ?, ?)";
         try (Connection conn = Conexion.conectar();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, usuario.getNombre());
-            pstmt.setString(2, usuario.getUsuario());
-            pstmt.setString(3, usuario.getPassword());
-            pstmt.setString(4, usuario.getRol());
+            pstmt.setString(1, usuario.getNombreUsuario());
+            // Hash password antes de guardar
+            String hashedPassword = proyecto.util.PasswordUtil.hashPassword(usuario.getPassword());
+            pstmt.setString(2, hashedPassword);
+            pstmt.setString(3, usuario.getRol());
             pstmt.executeUpdate();
             return true;
         } catch (SQLException e) {
@@ -24,21 +25,25 @@ public class UsuarioSistemaDAO {
         }
     }
 
-    public UsuarioSistema login(String usuario, String password) {
-        String sql = "SELECT * FROM Usuario WHERE usuario = ? AND password = ?";
+    public UsuarioSistema login(String nombreUsuario, String password) {
+        // Buscar por nombre_usuario
+        String sql = "SELECT * FROM Usuario WHERE nombre_usuario = ?";
         try (Connection conn = Conexion.conectar();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, usuario);
-            pstmt.setString(2, password);
+            pstmt.setString(1, nombreUsuario);
+            
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next()) {
-                    UsuarioSistema u = new UsuarioSistema();
-                    u.setIdUsuario(rs.getInt("id_usuario"));
-                    u.setNombre(rs.getString("nombre"));
-                    u.setUsuario(rs.getString("usuario"));
-                    u.setPassword(rs.getString("password"));
-                    u.setRol(rs.getString("rol"));
-                    return u;
+                    String storedHash = rs.getString("password");
+                    // Verificar contraseña
+                    if (proyecto.util.PasswordUtil.checkPassword(password, storedHash)) {
+                        UsuarioSistema u = new UsuarioSistema();
+                        u.setIdUsuario(rs.getInt("id_usuario"));
+                        u.setNombreUsuario(rs.getString("nombre_usuario"));
+                        u.setPassword(storedHash); // Mantenemos el hash en el objeto
+                        u.setRol(rs.getString("rol"));
+                        return u;
+                    }
                 }
             }
         } catch (SQLException e) {

@@ -16,6 +16,10 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.table.TableRowSorter;
+import javax.swing.RowFilter;
 
 public class ProveedoresPanel extends JPanel {
 
@@ -79,6 +83,33 @@ public class ProveedoresPanel extends JPanel {
         tableProveedores.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         tableProveedores.setBackground(Color.WHITE);
         panelList.add(new JScrollPane(tableProveedores), BorderLayout.CENTER);
+
+        // Search Panel
+        JPanel searchPanel = new JPanel(new BorderLayout());
+        searchPanel.setBackground(BG_PANEL);
+        searchPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        searchPanel.add(new JLabel("Buscar: "), BorderLayout.WEST);
+        JTextField txtBuscar = new JTextField();
+        searchPanel.add(txtBuscar, BorderLayout.CENTER);
+        panelList.add(searchPanel, BorderLayout.NORTH);
+
+        // Sorting
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(modelProveedores);
+        tableProveedores.setRowSorter(sorter);
+
+        txtBuscar.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { filter(); }
+            public void removeUpdate(DocumentEvent e) { filter(); }
+            public void changedUpdate(DocumentEvent e) { filter(); }
+            private void filter() {
+                String text = txtBuscar.getText();
+                if (text.trim().length() == 0) {
+                    sorter.setRowFilter(null);
+                } else {
+                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
+                }
+            }
+        });
 
         // Voice Button Panel
         JPanel btnPanel = new JPanel(new FlowLayout());

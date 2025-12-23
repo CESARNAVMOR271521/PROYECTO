@@ -9,7 +9,6 @@ import java.awt.*;
 public class RegistroDialog extends JDialog {
 
     private final JPanel contentPanel = new JPanel();
-    private JTextField txtNombre;
     private JTextField txtUsuario;
     private JPasswordField txtPassword;
     private JPasswordField txtConfirmPass;
@@ -44,14 +43,6 @@ public class RegistroDialog extends JDialog {
 
         // Campos
         int y = 50;
-
-        JLabel lblNombre = new JLabel("Nombre Completo:");
-        lblNombre.setBounds(30, y, 150, 20);
-        contentPanel.add(lblNombre);
-        txtNombre = new JTextField();
-        txtNombre.setBounds(30, y + 20, 320, 25);
-        contentPanel.add(txtNombre);
-        y += 50;
 
         JLabel lblUsuario = new JLabel("Usuario:");
         lblUsuario.setBounds(30, y, 150, 20);
@@ -103,13 +94,12 @@ public class RegistroDialog extends JDialog {
     }
 
     private void registrarUsuario() {
-        String nombre = txtNombre.getText();
         String usuario = txtUsuario.getText();
         String pass = new String(txtPassword.getPassword());
         String confirm = new String(txtConfirmPass.getPassword());
         String rol = (String) cmbRol.getSelectedItem();
 
-        if (nombre.isEmpty() || usuario.isEmpty() || pass.isEmpty()) {
+        if (usuario.isEmpty() || pass.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Todos los campos son obligatorios", "Validación",
                     JOptionPane.WARNING_MESSAGE);
             return;
@@ -122,9 +112,8 @@ public class RegistroDialog extends JDialog {
         }
 
         UsuarioSistema nuevo = new UsuarioSistema();
-        nuevo.setNombre(nombre);
-        nuevo.setUsuario(usuario);
-        nuevo.setPassword(pass); // En producción usaríamos hash
+        nuevo.setNombreUsuario(usuario);
+        nuevo.setPassword(pass); // El DAO se encargará del hash
         nuevo.setRol(rol);
 
         if (usuarioDAO.insertar(nuevo)) {

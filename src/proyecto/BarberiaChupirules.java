@@ -157,6 +157,15 @@ public class BarberiaChupirules {
 
         // MÓDULO INICIAL
         setModuleActive("CITAS");
+        
+        // 🧠 INICIAR ASISTENTE IA
+        try {
+            AsistenteIA asistente = new AsistenteIA(this);
+            asistente.iniciarEscucha();
+            System.out.println("Asistente IA iniciado y escuchando...");
+        } catch (Exception e) {
+            System.err.println("Error al iniciar asistente IA: " + e.getMessage());
+        }
     }
 
     private void addModule(JPanel container, String text, String cardName, JPanel panel, String keyStroke) {
@@ -183,7 +192,7 @@ public class BarberiaChupirules {
         }
     }
 
-    private void setModuleActive(String cardName) {
+    public void setModuleActive(String cardName) {
         cardLayout.show(contentPanel, cardName);
 
         // Actualizar visualmente los botones

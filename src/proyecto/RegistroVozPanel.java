@@ -13,6 +13,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.JTextField;
+import javax.swing.table.TableRowSorter;
+import javax.swing.RowFilter;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
 
 import proyecto.dao.RegistroVozDAO;
 
@@ -20,6 +25,7 @@ public class RegistroVozPanel extends JPanel {
 
     private JTable table;
     private DefaultTableModel tableModel;
+    private JTextField txtBuscar;
     private RegistroVozDAO dao;
 
     // Theme Colors
@@ -31,11 +37,24 @@ public class RegistroVozPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBackground(new Color(245, 240, 220));
 
+        // Header
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(new Color(245, 240, 220));
+
         JLabel lblTitle = new JLabel("Historial de Comandos de Voz");
         lblTitle.setFont(new Font("Serif", Font.BOLD, 24));
         lblTitle.setForeground(TXT_MAIN);
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        add(lblTitle, BorderLayout.NORTH);
+        headerPanel.add(lblTitle, BorderLayout.NORTH);
+
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        searchPanel.setBackground(new Color(245, 240, 220));
+        searchPanel.add(new JLabel("Buscar:"));
+        txtBuscar = new JTextField(20);
+        searchPanel.add(txtBuscar);
+        headerPanel.add(searchPanel, BorderLayout.SOUTH);
+
+        add(headerPanel, BorderLayout.NORTH);
 
         String[] columnNames = { "ID", "Texto Reconocido", "Fecha/Hora" };
         tableModel = new DefaultTableModel(columnNames, 0);
@@ -47,6 +66,24 @@ public class RegistroVozPanel extends JPanel {
         table.getColumnModel().getColumn(0).setWidth(0);
 
         add(new JScrollPane(table), BorderLayout.CENTER);
+
+        // Sorting
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModel);
+        table.setRowSorter(sorter);
+
+        txtBuscar.getDocument().addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent e) { filter(); }
+            public void removeUpdate(DocumentEvent e) { filter(); }
+            public void changedUpdate(DocumentEvent e) { filter(); }
+            private void filter() {
+                String text = txtBuscar.getText();
+                if (text.trim().length() == 0) {
+                    sorter.setRowFilter(null);
+                } else {
+                    sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
+                }
+            }
+        });
 
         JPanel btnPanel = new JPanel(new FlowLayout());
         btnPanel.setBackground(new Color(245, 240, 220));
