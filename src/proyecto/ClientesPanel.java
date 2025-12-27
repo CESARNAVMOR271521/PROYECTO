@@ -27,6 +27,8 @@ import javax.swing.RowFilter;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 
+import proyecto.util.Theme;
+
 public class ClientesPanel extends JPanel {
 
     private JTable table;
@@ -34,29 +36,31 @@ public class ClientesPanel extends JPanel {
     private DefaultTableModel tableModel1;
     private JTextField txtNombre, txtTelefono, txtCorreo, txtHistorial, txtBuscar;
 
-    // Theme Colors (Reusing Godhome Theme)
-    private final Color BTN_DEFAULT = new Color(199, 179, 106);
-    private final Color TXT_MAIN = new Color(60, 45, 20);
+    private JTextField txtNombre1, txtTelefono1, txtCorreo1, txtHistorial1, txtBuscar1;
 
     public ClientesPanel() {
         setLayout(new BorderLayout(10, 10));
-        setBackground(new Color(245, 240, 220));
+        Theme.applyTheme(this);
 
         // Header Panel
+        // Header Panel
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(new Color(245, 240, 220));
+        headerPanel.setBackground(Theme.COLOR_PRIMARY);
 
         // Title
         JLabel lblTitle = new JLabel("Gestión de Clientes");
-        lblTitle.setFont(new Font("Serif", Font.BOLD, 24));
-        lblTitle.setForeground(TXT_MAIN);
+        lblTitle.setFont(Theme.FONT_TITLE);
+        lblTitle.setForeground(Theme.COLOR_ACCENT_GOLD);
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
         headerPanel.add(lblTitle, BorderLayout.NORTH);
 
         // Search Bar
+        // Search Bar
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        searchPanel.setBackground(new Color(245, 240, 220));
-        searchPanel.add(new JLabel("Buscar:"));
+        searchPanel.setBackground(Theme.COLOR_PRIMARY);
+        JLabel lblSearch = new JLabel("Buscar:");
+        lblSearch.setForeground(Theme.COLOR_TEXT);
+        searchPanel.add(lblSearch);
         txtBuscar = new JTextField(20);
         searchPanel.add(txtBuscar);
         headerPanel.add(searchPanel, BorderLayout.SOUTH);
@@ -66,20 +70,22 @@ public class ClientesPanel extends JPanel {
         // Form Panel
         JPanel formPanel = new JPanel(new GridLayout(4, 2, 5, 5));
         formPanel.setBorder(BorderFactory.createEmptyBorder(10, 50, 10, 50));
-        formPanel.setBackground(new Color(245, 240, 220));
+        formPanel.setBackground(Theme.COLOR_SECONDARY);
 
         txtNombre = new JTextField();
         txtTelefono = new JTextField();
         txtCorreo = new JTextField();
         txtHistorial = new JTextField();
 
-        formPanel.add(new JLabel("Nombre:"));
+        txtHistorial = new JTextField();
+
+        addLabel(formPanel, "Nombre:");
         formPanel.add(txtNombre);
-        formPanel.add(new JLabel("Teléfono:"));
+        addLabel(formPanel, "Teléfono:");
         formPanel.add(txtTelefono);
-        formPanel.add(new JLabel("Correo:"));
+        addLabel(formPanel, "Correo:");
         formPanel.add(txtCorreo);
-        formPanel.add(new JLabel("Historial (Notas):"));
+        addLabel(formPanel, "Historial (Notas):");
         formPanel.add(txtHistorial);
 
         add(formPanel, BorderLayout.SOUTH); // Place form at bottom initially or wrapped in another panel
@@ -89,11 +95,15 @@ public class ClientesPanel extends JPanel {
         tableModel = new DefaultTableModel(columnNames, 0);
         table = new JTable(tableModel);
         // Hide ID column
+        // Hide ID column
         table.getColumnModel().getColumn(0).setMinWidth(0);
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
 
+        Theme.styleTable(table);
+
         JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.getViewport().setBackground(Theme.COLOR_SECONDARY);
         add(scrollPane, BorderLayout.CENTER);
 
         // Table Sorter
@@ -116,14 +126,16 @@ public class ClientesPanel extends JPanel {
 
         // Buttons Panel
         JPanel btnPanel = new JPanel(new FlowLayout());
-        btnPanel.setBackground(new Color(245, 240, 220));
+        btnPanel.setBackground(Theme.COLOR_PRIMARY);
 
-        JButton btnAdd = createButton("Agregar");
-        JButton btnUpdate = createButton("Actualizar");
-        JButton btnDelete = createButton("Eliminar");
-        JButton btnClear = createButton("Limpiar");
+        JButton btnAdd = Theme.createStyledButton("Agregar");
+        JButton btnUpdate = Theme.createStyledButton("Actualizar");
+        JButton btnDelete = Theme.createStyledButton("Eliminar");
+        JButton btnClear = Theme.createStyledButton("Limpiar");
 
         VoiceButton btnVoice = new VoiceButton(); // New Voice Button
+        btnVoice.setBackground(Theme.COLOR_ACCENT_GOLD);
+        btnVoice.setForeground(Theme.COLOR_PRIMARY);
 
         btnPanel.add(btnAdd);
         btnPanel.add(btnUpdate);
@@ -160,12 +172,11 @@ public class ClientesPanel extends JPanel {
         loadData();
     }
 
-    private JButton createButton(String text) {
-        JButton btn = new JButton(text);
-        btn.setBackground(BTN_DEFAULT);
-        btn.setForeground(TXT_MAIN);
-        btn.setFocusPainted(false);
-        return btn;
+    private void addLabel(JPanel panel, String text) {
+        JLabel lbl = new JLabel(text);
+        lbl.setForeground(Theme.COLOR_TEXT);
+        lbl.setFont(Theme.FONT_BOLD);
+        panel.add(lbl);
     }
 
     private void loadData() {

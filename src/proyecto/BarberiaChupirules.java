@@ -25,25 +25,15 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 
+import proyecto.util.Theme;
+import proyecto.vista.LoginFrame;
+
 public class BarberiaChupirules {
 
     private JFrame frame;
     private JPanel contentPanel;
     private CardLayout cardLayout;
     private JPanel sidebar;
-
-    // 🎨 ESTILO “SALÓN DE LOS DIOSES” – HOLLOW KNIGHT
-    private final Color BG_MARBLE = new Color(233, 227, 200); // Mármol claro
-    private final Color BG_GOLD_SOFT = new Color(209, 184, 108); // Dorado suave
-    private final Color BG_GOLD_DARK = new Color(140, 112, 60); // Dorado oscuro
-    private final Color BG_PANEL = new Color(245, 240, 220); // Panel suave
-
-    private final Color BTN_DEFAULT = new Color(199, 179, 106); // Dorado neutro
-    private final Color BTN_HOVER = new Color(228, 204, 130); // Dorado claro
-    private final Color BTN_ACTIVE = new Color(255, 230, 150); // Dorado muy claro (Activo)
-    private final Color TXT_MAIN = new Color(60, 45, 20); // Café oscuro elegante
-
-    private final Color BORDER_GOD = new Color(242, 213, 107); // Oro brillante
 
     // Mapa para gestionar los botones activos
     private Map<String, JButton> menuButtons = new HashMap<>();
@@ -58,55 +48,73 @@ public class BarberiaChupirules {
         DatabaseHelper.initDB();
 
         EventQueue.invokeLater(() -> {
-            // Callback que inicia la aplicación principal
-            Runnable startApp = () -> {
-                BarberiaChupirules window = new BarberiaChupirules();
-                window.frame.setVisible(true);
+            // Callback que inicia la aplicación principal con el loader
+            java.util.function.Consumer<proyecto.vista.LoadingFrame> startApp = (loader) -> {
+                // Initialize in background/worker thread context (which LoadingFrame provides)
+                // But create frame.setVisible in EDT
+                try {
+                    BarberiaChupirules window = new BarberiaChupirules(loader);
+                    EventQueue.invokeLater(() -> window.frame.setVisible(true));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             };
 
             // Iniciar con Login
-            // LoginFrame se encargará de mostrar el Splash y luego ejecutar startApp
-            proyecto.vista.LoginFrame login = new proyecto.vista.LoginFrame(startApp);
+            LoginFrame login = new LoginFrame(startApp);
             login.setVisible(true);
         });
     }
 
     public BarberiaChupirules() {
-        initialize();
+        // Default constructor for design preview or legacy
+        initialize(null);
+    }
+    
+    public BarberiaChupirules(proyecto.vista.LoadingFrame loader) {
+        initialize(loader);
     }
 
-    private void initialize() {
+    private void initialize(proyecto.vista.LoadingFrame loader) {
+        if (loader != null) loader.updateProgress(10, "Configurando ventana principal...");
 
-        frame = new JFrame("BARBERÍA CHUPIRULES - Godhome Edition");
+        frame = new JFrame("BARBERÍA CHUPIRULES - Management System");
         frame.setBounds(100, 100, 1200, 800);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setLocationRelativeTo(null);
+        try {
+            frame.setIconImage(java.awt.Toolkit.getDefaultToolkit().getImage("src/img/logo.jpg"));
+        } catch (Exception e) {
+             System.err.println("Error loading icon: " + e.getMessage());
+        }
+        frame.setLocationRelativeTo(null); // This might be slow if display config is complex, but usually fine
         frame.getContentPane().setLayout(new BorderLayout());
-        frame.getContentPane().setBackground(BG_MARBLE);
+        frame.getContentPane().setBackground(Theme.COLOR_PRIMARY);
 
-        // 🎛 SIDEBAR estilo salón divino
+        if (loader != null) loader.updateProgress(20, "Cargando componentes visuales...");
+
+        // 🎛 SIDEBAR
         sidebar = new JPanel(new BorderLayout());
         sidebar.setPreferredSize(new Dimension(250, 0));
-        sidebar.setBackground(BG_GOLD_DARK);
-        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 6, BORDER_GOD));
+        sidebar.setBackground(Theme.COLOR_SECONDARY);
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 2, Theme.COLOR_ACCENT_GOLD));
 
         frame.add(sidebar, BorderLayout.WEST);
 
-        // HEADER DORADO
+        // HEADER
         JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(BG_GOLD_DARK);
+        header.setBackground(Theme.COLOR_PRIMARY);
         header.setPreferredSize(new Dimension(250, 100));
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 4, 0, BORDER_GOD));
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Theme.COLOR_ACCENT_GOLD));
 
         JLabel lblTitle = new JLabel("CHUPIRULES");
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        lblTitle.setForeground(BORDER_GOD);
-        lblTitle.setFont(new Font("Serif", Font.BOLD, 28)); // tipografía elegante
+        lblTitle.setForeground(Theme.COLOR_ACCENT_GOLD);
+        lblTitle.setFont(Theme.FONT_TITLE);
 
         JLabel lblSubtitle = new JLabel("BARBER SHOP");
         lblSubtitle.setHorizontalAlignment(SwingConstants.CENTER);
-        lblSubtitle.setForeground(TXT_MAIN);
-        lblSubtitle.setFont(new Font("Serif", Font.PLAIN, 14));
+        lblSubtitle.setForeground(Theme.COLOR_TEXT);
+        lblSubtitle.setFont(Theme.FONT_REGULAR);
 
         header.add(lblTitle, BorderLayout.CENTER);
         header.add(lblSubtitle, BorderLayout.SOUTH);
@@ -114,7 +122,7 @@ public class BarberiaChupirules {
 
         // MENÚ LATERAL
         JPanel menuContainer = new JPanel(new GridLayout(0, 1, 0, 8));
-        menuContainer.setBackground(BG_GOLD_DARK);
+        menuContainer.setBackground(Theme.COLOR_SECONDARY);
         menuContainer.setBorder(BorderFactory.createEmptyBorder(25, 10, 25, 10));
         sidebar.add(menuContainer, BorderLayout.CENTER);
 
@@ -122,34 +130,49 @@ public class BarberiaChupirules {
         contentPanel = new JPanel();
         cardLayout = new CardLayout();
         contentPanel.setLayout(cardLayout);
-        contentPanel.setBackground(BG_PANEL);
+        contentPanel.setBackground(Theme.COLOR_PRIMARY); // Fondo principal azul
         frame.add(contentPanel, BorderLayout.CENTER);
 
+        if (loader != null) loader.updateProgress(30, "Cargando módulo de Clientes...");
         // MÓDULOS (F1 -> F12)
         addModule(menuContainer, "Clientes (F1)", "CLIENTES", new ClientesPanel(), "F1");
+        
+        if (loader != null) loader.updateProgress(35, "Cargando módulo de Barberos...");
         addModule(menuContainer, "Barberos (F2)", "BARBEROS", new BarberosPanel(), "F2");
+        
+        if (loader != null) loader.updateProgress(40, "Cargando Servicios...");
         addModule(menuContainer, "Servicios (F3)", "SERVICIOS", new ServiciosPanel(), "F3");
+        
+        if (loader != null) loader.updateProgress(45, "Cargando Citas...");
         addModule(menuContainer, "Citas (F4)", "CITAS", new CitasPanel(), "F4");
+        
+        if (loader != null) loader.updateProgress(50, "Cargando Ventas...");
         addModule(menuContainer, "Ventas (F5)", "VENTAS", new VentasPanel(), "F5");
+        
+        if (loader != null) loader.updateProgress(55, "Cargando Historial...");
         addModule(menuContainer, "Historial (F6)", "DETALLE", new HistorialPanel(), "F6");
+        
+        if (loader != null) loader.updateProgress(60, "Cargando Productos...");
         addModule(menuContainer, "Productos (F7)", "PRODUCTOS", new ProductosPanel(), "F7");
 
+        if (loader != null) loader.updateProgress(70, "Cargando Usuarios y Pagos...");
         addModule(menuContainer, "Usuarios (F9)", "USUARIOS", new UsuariosPanel(), "F9");
         addModule(menuContainer, "Pagos (F10)", "PAGOS", new PagosPanel(), "F10");
 
+        if (loader != null) loader.updateProgress(80, "Cargando Facturación...");
         addModule(menuContainer, "Facturas (F12)", "FACTURAS", new FacturasPanel(), "F12");
-        // Extra modules without shortcuts for now, or could use Shift+F1 etc.
+        
         addModule(menuContainer, "Proveedores", "PROVEEDORES", new ProveedoresPanel(), null);
         addModule(menuContainer, "Compras", "COMPRAS", new ComprasPanel(), null);
         addModule(menuContainer, "Voz (Logs)", "VOZ_LOGS", new RegistroVozPanel(), null);
 
         // FOOTER SALIR
         JPanel footer = new JPanel();
-        footer.setBackground(BG_GOLD_DARK);
+        footer.setBackground(Theme.COLOR_SECONDARY);
 
-        JButton btnSalir = createGodButton("SALIR");
-        btnSalir.setBackground(new Color(150, 40, 40));
-        btnSalir.setForeground(Color.WHITE);
+        JButton btnSalir = createMenuButton("SALIR");
+        btnSalir.setBackground(Theme.COLOR_ACCENT_RED.darker());
+        btnSalir.setForeground(Theme.COLOR_TEXT);
         btnSalir.addActionListener(e -> System.exit(0));
 
         footer.add(btnSalir);
@@ -157,6 +180,8 @@ public class BarberiaChupirules {
 
         // MÓDULO INICIAL
         setModuleActive("CITAS");
+        
+        if (loader != null) loader.updateProgress(90, "Iniciando Asistente IA...");
         
         // 🧠 INICIAR ASISTENTE IA
         try {
@@ -166,10 +191,12 @@ public class BarberiaChupirules {
         } catch (Exception e) {
             System.err.println("Error al iniciar asistente IA: " + e.getMessage());
         }
+        
+        if (loader != null) loader.updateProgress(100, "¡Bienvenido!");
     }
 
     private void addModule(JPanel container, String text, String cardName, JPanel panel, String keyStroke) {
-        JButton btn = createGodButton(text);
+        JButton btn = createMenuButton(text);
         btn.addActionListener(e -> setModuleActive(cardName));
         btn.setToolTipText("Abrir módulo de " + text.replace(" (", "").replace(")", ""));
 
@@ -198,50 +225,46 @@ public class BarberiaChupirules {
         // Actualizar visualmente los botones
         for (Map.Entry<String, JButton> entry : menuButtons.entrySet()) {
             if (entry.getKey().equals(cardName)) {
-                entry.getValue().setBackground(BTN_ACTIVE);
-                entry.getValue().setBorder(BorderFactory.createMatteBorder(3, 3, 3, 3, Color.WHITE)); // Resalte extra
+                // Activo
+                entry.getValue().setBackground(Theme.COLOR_ACCENT_RED);
+                entry.getValue().setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, Theme.COLOR_ACCENT_GOLD));
             } else {
-                entry.getValue().setBackground(BTN_DEFAULT);
-                entry.getValue().setBorder(BorderFactory.createMatteBorder(3, 3, 3, 3, BORDER_GOD));
+                // Inactivo
+                entry.getValue().setBackground(Theme.COLOR_SECONDARY);
+                entry.getValue().setBorder(BorderFactory.createEmptyBorder());
             }
         }
     }
 
-    // ✨ BOTÓN DE ESTILO DIVINO
-    private JButton createGodButton(String text) {
+    // ✨ BOTÓN DE MENÚ LATERAL
+    private JButton createMenuButton(String text) {
 
         JButton btn = new JButton(text);
-        btn.setPreferredSize(new Dimension(200, 35)); // Ligeramente más pequeño para que quepan todos
-        btn.setForeground(TXT_MAIN);
-        btn.setBackground(BTN_DEFAULT);
-        btn.setFont(new Font("Serif", Font.BOLD, 14)); // Fuente ajustada
+        btn.setPreferredSize(new Dimension(200, 35));
+        btn.setForeground(Theme.COLOR_TEXT);
+        btn.setBackground(Theme.COLOR_SECONDARY);
+        btn.setFont(Theme.FONT_BOLD);
         btn.setFocusPainted(false);
-
-        btn.setBorder(BorderFactory.createMatteBorder(
-                3, 3, 3, 3,
-                BORDER_GOD));
+        // Sin borde por defecto para limpiar
+        btn.setBorder(BorderFactory.createEmptyBorder());
 
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                // Solo cambiar si no es el botón activo
-                if (btn.getBackground() != BTN_ACTIVE) {
-                    btn.setBackground(BTN_HOVER);
+                if (btn.getBackground() != Theme.COLOR_ACCENT_RED) {
+                    btn.setBackground(Theme.COLOR_PRIMARY); // Hover effect
                 }
             }
 
             public void mouseExited(java.awt.event.MouseEvent evt) {
-                // Solo restaurar si no es el botón activo
-                if (btn.getBackground() != BTN_ACTIVE) {
-                    btn.setBackground(BTN_DEFAULT);
+                if (btn.getBackground() != Theme.COLOR_ACCENT_RED) {
+                    btn.setBackground(Theme.COLOR_SECONDARY);
                 }
             }
         });
 
         return btn;
     }
-
-    // ✨ PANEL DEL CONTENIDO CENTRAL
-
 }
+

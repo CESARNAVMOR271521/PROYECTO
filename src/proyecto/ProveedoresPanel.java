@@ -9,6 +9,7 @@ import proyecto.modelo.CompraProveedor;
 import proyecto.modelo.Inventario;
 import proyecto.modelo.Producto;
 import proyecto.modelo.Proveedor;
+import proyecto.util.Theme;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -22,13 +23,6 @@ import javax.swing.table.TableRowSorter;
 import javax.swing.RowFilter;
 
 public class ProveedoresPanel extends JPanel {
-
-    // 🎨 ESTILO “SALÓN DE LOS DIOSES” – Copied for consistency
-    private final Color BG_MARBLE = new Color(233, 227, 200);
-    private final Color BG_GOLD_SOFT = new Color(209, 184, 108);
-    private final Color BG_PANEL = new Color(245, 240, 220);
-    private final Color TXT_MAIN = new Color(60, 45, 20);
-    private final Color BORDER_GOD = new Color(242, 213, 107);
 
     private ProveedorDAO proveedorDAO;
     private ProductoDAO productoDAO;
@@ -53,19 +47,22 @@ public class ProveedoresPanel extends JPanel {
         compraDAO = new CompraProveedorDAO();
 
         setLayout(new BorderLayout());
-        setBackground(BG_PANEL);
+        Theme.applyTheme(this);
 
         // -- SPLIT PANE: Left (List) vs Right (Details) --
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         splitPane.setDividerLocation(300);
-        splitPane.setBackground(BG_PANEL);
+        splitPane.setBackground(Theme.COLOR_PRIMARY);
         add(splitPane, BorderLayout.CENTER);
 
         // == LEFT SIDE: Supplier List ==
         JPanel panelList = new JPanel(new BorderLayout());
-        panelList.setBackground(BG_PANEL);
+        panelList.setBackground(Theme.COLOR_SECONDARY);
         panelList.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(BORDER_GOD, 2), "Proveedores Registrados"));
+                BorderFactory.createLineBorder(Theme.COLOR_ACCENT_GOLD, 2), "Proveedores Registrados",
+                javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, 
+                javax.swing.border.TitledBorder.DEFAULT_POSITION, 
+                Theme.FONT_REGULAR, Theme.COLOR_ACCENT_GOLD));
 
         modelProveedores = new DefaultTableModel(new Object[] { "ID", "Nombre" }, 0) {
             @Override
@@ -81,14 +78,21 @@ public class ProveedoresPanel extends JPanel {
         tableProveedores.getColumnModel().getColumn(0).setWidth(0);
 
         tableProveedores.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tableProveedores.setBackground(Color.WHITE);
-        panelList.add(new JScrollPane(tableProveedores), BorderLayout.CENTER);
+        Theme.styleTable(tableProveedores);
+        
+        JScrollPane scrollProveedores = new JScrollPane(tableProveedores);
+        scrollProveedores.getViewport().setBackground(Theme.COLOR_SECONDARY);
+        panelList.add(scrollProveedores, BorderLayout.CENTER);
 
         // Search Panel
         JPanel searchPanel = new JPanel(new BorderLayout());
-        searchPanel.setBackground(BG_PANEL);
+        searchPanel.setBackground(Theme.COLOR_SECONDARY);
         searchPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        searchPanel.add(new JLabel("Buscar: "), BorderLayout.WEST);
+        
+        JLabel lblBuscar = new JLabel("Buscar: ");
+        lblBuscar.setForeground(Theme.COLOR_TEXT);
+        searchPanel.add(lblBuscar, BorderLayout.WEST);
+        
         JTextField txtBuscar = new JTextField();
         searchPanel.add(txtBuscar, BorderLayout.CENTER);
         panelList.add(searchPanel, BorderLayout.NORTH);
@@ -113,8 +117,10 @@ public class ProveedoresPanel extends JPanel {
 
         // Voice Button Panel
         JPanel btnPanel = new JPanel(new FlowLayout());
-        btnPanel.setBackground(BG_PANEL);
+        btnPanel.setBackground(Theme.COLOR_SECONDARY);
         VoiceButton btnVoice = new VoiceButton();
+        btnVoice.setBackground(Theme.COLOR_ACCENT_GOLD);
+        btnVoice.setForeground(Theme.COLOR_PRIMARY);
         btnPanel.add(btnVoice);
         panelList.add(btnPanel, BorderLayout.SOUTH);
 
@@ -134,12 +140,13 @@ public class ProveedoresPanel extends JPanel {
 
         // == RIGHT SIDE: Details (Tabs) ==
         JTabbedPane tabbedPane = new JTabbedPane();
-        tabbedPane.setFont(new Font("Serif", Font.BOLD, 14));
-        tabbedPane.setBackground(BG_GOLD_SOFT);
+        tabbedPane.setFont(Theme.FONT_REGULAR);
+        tabbedPane.setBackground(Theme.COLOR_SECONDARY);
+        tabbedPane.setForeground(Theme.COLOR_PRIMARY); 
 
         // Tab 1: General Info
         JPanel pnlInfo = new JPanel(new GridLayout(4, 2, 10, 10));
-        pnlInfo.setBackground(BG_PANEL);
+        pnlInfo.setBackground(Theme.COLOR_PRIMARY);
         pnlInfo.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         lblNombre = new JLabel("-");
@@ -162,7 +169,11 @@ public class ProveedoresPanel extends JPanel {
         tableHistorial.getColumnModel().getColumn(0).setMaxWidth(0);
         tableHistorial.getColumnModel().getColumn(0).setWidth(0);
 
-        pnlHistorial.add(new JScrollPane(tableHistorial), BorderLayout.CENTER);
+        Theme.styleTable(tableHistorial);
+        JScrollPane scrollHistorial = new JScrollPane(tableHistorial);
+        scrollHistorial.getViewport().setBackground(Theme.COLOR_SECONDARY);
+        
+        pnlHistorial.add(scrollHistorial, BorderLayout.CENTER);
         tabbedPane.addTab("Historial de Entregas", pnlHistorial);
 
         // Tab 3: Inventario (Productos de este proveedor)
@@ -170,7 +181,12 @@ public class ProveedoresPanel extends JPanel {
         modelInventario = new DefaultTableModel(
                 new Object[] { "Producto", "Precio Compra", "Precio Venta", "Stock Actual", "Minimo" }, 0);
         tableInventario = new JTable(modelInventario);
-        pnlInventario.add(new JScrollPane(tableInventario), BorderLayout.CENTER);
+        
+        Theme.styleTable(tableInventario);
+        JScrollPane scrollInventario = new JScrollPane(tableInventario);
+        scrollInventario.getViewport().setBackground(Theme.COLOR_SECONDARY);
+        
+        pnlInventario.add(scrollInventario, BorderLayout.CENTER);
         tabbedPane.addTab("Inventario por Proveedor", pnlInventario);
 
         splitPane.setRightComponent(tabbedPane);
@@ -188,10 +204,12 @@ public class ProveedoresPanel extends JPanel {
 
     private void addInfoRow(JPanel p, String label, JLabel value) {
         JLabel l = new JLabel(label);
-        l.setFont(new Font("Serif", Font.BOLD, 14));
-        l.setForeground(TXT_MAIN);
-        value.setFont(new Font("SansSerif", Font.PLAIN, 14));
-        value.setForeground(Color.BLACK);
+        l.setFont(Theme.FONT_BOLD);
+        l.setForeground(Theme.COLOR_ACCENT_GOLD);
+        
+        value.setFont(Theme.FONT_REGULAR);
+        value.setForeground(Theme.COLOR_TEXT);
+        
         p.add(l);
         p.add(value);
     }

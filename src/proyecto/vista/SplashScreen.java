@@ -12,6 +12,8 @@ import javax.swing.JWindow;
 import javax.swing.SwingConstants;
 import javax.swing.SwingWorker;
 
+import proyecto.util.Theme;
+
 /**
  * Pantalla de carga (Splash Screen) con barra de progreso.
  */
@@ -30,28 +32,28 @@ public class SplashScreen extends JWindow {
         setLocationRelativeTo(null);
 
         JPanel contentPane = (JPanel) getContentPane();
-        contentPane.setBackground(new Color(233, 227, 200)); // Mármol oscuro
+        contentPane.setBackground(Theme.COLOR_SECONDARY);
         contentPane.setLayout(new BorderLayout());
-        contentPane.setBorder(BorderFactory.createLineBorder(new Color(140, 112, 60), 4));
+        contentPane.setBorder(BorderFactory.createLineBorder(Theme.COLOR_ACCENT_GOLD, 4));
 
         // Título estilizado
         JLabel lblTitle = new JLabel("CHUPIRULES BARBER SHOP");
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Serif", Font.BOLD, 28));
-        lblTitle.setForeground(new Color(60, 45, 20)); // Café oscuro
+        lblTitle.setFont(Theme.FONT_TITLE);
+        lblTitle.setForeground(Theme.COLOR_ACCENT_GOLD);
         contentPane.add(lblTitle, BorderLayout.CENTER);
 
         JLabel lblLoading = new JLabel("Cargando sistema...");
         lblLoading.setHorizontalAlignment(SwingConstants.CENTER);
         lblLoading.setFont(new Font("Serif", Font.ITALIC, 14));
-        lblLoading.setForeground(new Color(100, 80, 50));
+        lblLoading.setForeground(Theme.COLOR_TEXT);
         contentPane.add(lblLoading, BorderLayout.NORTH);
 
         // Barra de progreso dorada
         progressBar = new JProgressBar();
         progressBar.setStringPainted(true);
-        progressBar.setForeground(new Color(242, 213, 107)); // Dorado
-        progressBar.setBackground(new Color(60, 45, 20)); // Fondo oscuro
+        progressBar.setForeground(Theme.COLOR_ACCENT_GOLD);
+        progressBar.setBackground(Theme.COLOR_PRIMARY);
         progressBar.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         contentPane.add(progressBar, BorderLayout.SOUTH);
     }

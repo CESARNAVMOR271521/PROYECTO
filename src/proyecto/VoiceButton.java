@@ -9,18 +9,20 @@ import javax.swing.JButton;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
+import proyecto.util.Theme;
+
 public class VoiceButton extends JButton {
 
     private boolean listening = false;
-    private final Color LISTENING_COLOR = new Color(255, 100, 100);
-    private final Color DEFAULT_COLOR = new Color(199, 179, 106); // Matching other buttons
+    private final Color LISTENING_COLOR = Theme.COLOR_ACCENT_RED;
+    private final Color DEFAULT_COLOR = Theme.COLOR_ACCENT_GOLD;
     private Component lastFocusedComponent;
 
     public VoiceButton() {
         super("🎤"); // Microphone emoji or text
         setBackground(DEFAULT_COLOR);
-        setFocusable(false); // Important: don't steal focus when clicked so we can remember previous
-                             // component
+        setForeground(Theme.COLOR_PRIMARY);
+        setFocusable(false); 
 
         addActionListener(new ActionListener() {
             @Override
@@ -51,18 +53,15 @@ public class VoiceButton extends JButton {
             if (focusOwner instanceof JTextField) {
                 lastFocusedComponent = focusOwner;
             } else if (lastFocusedComponent == null || !(lastFocusedComponent instanceof JTextField)) {
-                // If we don't have a tracked focus, we might want to just return or find one
-                // manually
-                // For now, let's assume the user clicked a text field recently
-                // System.out.println("No text field focused");
-                // We proceed anyway, but maybe the text goes nowhere if lastFocusedComponent is
-                // null?
-                // Let's rely on `lastFocusedComponent` which might need updating via
-                // FocusListener elsewhere
-                // However, since this button is setFocusable(false), clicking it shouldn't
-                // completely remove focus from the window,
-                // BUT the focus owner might become null temporarily during click.
-                // Ideally, track focus globally or assume the last known text field.
+               // Fallback: Search siblings for a JTextField
+               if (getParent() != null) {
+                   for (Component c : getParent().getComponents()) {
+                       if (c instanceof JTextField) {
+                           lastFocusedComponent = c;
+                           break;
+                       }
+                   }
+               }
             }
 
             final JTextField targetField = (lastFocusedComponent instanceof JTextField)
@@ -85,12 +84,15 @@ public class VoiceButton extends JButton {
                                 current += " ";
                             }
                             targetField.setText(current + text);
+                            // Restore focus to the target field so user can keep typing if needed
+                            targetField.requestFocusInWindow();
                         }
                     });
                 });
             } else {
-                // Warning or just don't start
-                System.out.println("No target text area found to type into.");
+                javax.swing.JOptionPane.showMessageDialog(this, 
+                    "No se encontró un campo de texto para escribir.\nPor favor, haga clic en un campo de texto antes de activar el micrófono.",
+                    "Error de Foco", javax.swing.JOptionPane.WARNING_MESSAGE);
             }
         }
     }

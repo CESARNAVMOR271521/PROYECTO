@@ -6,6 +6,7 @@ import java.awt.*;
 import java.util.List;
 import proyecto.dao.ClienteDAO;
 import proyecto.modelo.Cliente;
+import proyecto.util.Theme;
 
 public class ClientePanel extends JPanel {
     private JTable table;
@@ -15,11 +16,15 @@ public class ClientePanel extends JPanel {
     public ClientePanel() {
         setLayout(new BorderLayout());
         clienteDAO = new ClienteDAO();
+        Theme.applyTheme(this);
         
         // Toolbar
         JPanel toolbar = new JPanel();
-        JButton btnAgregar = new JButton("Agregar");
-        JButton btnRecargar = new JButton("Recargar");
+        toolbar.setBackground(Theme.COLOR_PRIMARY);
+
+        JButton btnAgregar = Theme.createStyledButton("Agregar");
+        JButton btnRecargar = Theme.createStyledButton("Recargar");
+        
         toolbar.add(btnAgregar);
         toolbar.add(btnRecargar);
         add(toolbar, BorderLayout.NORTH);
@@ -28,7 +33,11 @@ public class ClientePanel extends JPanel {
         String[] columnNames = {"ID", "Nombre", "Teléfono", "Correo", "Historial", "Fecha Registro"};
         model = new DefaultTableModel(columnNames, 0);
         table = new JTable(model);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        
+        Theme.styleTable(table);
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.getViewport().setBackground(Theme.COLOR_SECONDARY);
+        add(scrollPane, BorderLayout.CENTER);
 
         // Actions
         btnRecargar.addActionListener(e -> cargarClientes());

@@ -1,9 +1,7 @@
 package proyecto;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.GridLayout;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -27,6 +25,8 @@ import javax.swing.RowFilter;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 
+import proyecto.util.Theme;
+
 public class UsuariosPanel extends JPanel {
 
     private JTable table;
@@ -34,27 +34,26 @@ public class UsuariosPanel extends JPanel {
     private JTextField txtUsuario, txtPassword, txtBuscar;
     private JComboBox<String> cbRol;
 
-    // Theme Colors
-    private final Color BTN_DEFAULT = new Color(199, 179, 106);
-    private final Color TXT_MAIN = new Color(60, 45, 20);
-
     public UsuariosPanel() {
         setLayout(new BorderLayout(10, 10));
-        setBackground(new Color(245, 240, 220));
+        Theme.applyTheme(this);
 
         // Header
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(new Color(245, 240, 220));
+        headerPanel.setBackground(Theme.COLOR_PRIMARY);
 
         JLabel lblTitle = new JLabel("Administración de Usuarios");
-        lblTitle.setFont(new Font("Serif", Font.BOLD, 24));
-        lblTitle.setForeground(TXT_MAIN);
+        lblTitle.setFont(Theme.FONT_TITLE);
+        lblTitle.setForeground(Theme.COLOR_ACCENT_GOLD);
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
         headerPanel.add(lblTitle, BorderLayout.NORTH);
 
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        searchPanel.setBackground(new Color(245, 240, 220));
-        searchPanel.add(new JLabel("Buscar:"));
+        searchPanel.setBackground(Theme.COLOR_PRIMARY);
+        JLabel lblBuscar = new JLabel("Buscar:");
+        lblBuscar.setForeground(Theme.COLOR_TEXT);
+        searchPanel.add(lblBuscar);
+        
         txtBuscar = new JTextField(20);
         searchPanel.add(txtBuscar);
         headerPanel.add(searchPanel, BorderLayout.SOUTH);
@@ -63,17 +62,17 @@ public class UsuariosPanel extends JPanel {
 
         JPanel formPanel = new JPanel(new GridLayout(3, 2, 5, 5));
         formPanel.setBorder(BorderFactory.createEmptyBorder(10, 50, 10, 50));
-        formPanel.setBackground(new Color(245, 240, 220));
+        formPanel.setBackground(Theme.COLOR_SECONDARY);
 
         txtUsuario = new JTextField();
         txtPassword = new JTextField();
         cbRol = new JComboBox<>(new String[] { "admin", "barbero", "empleado" });
 
-        formPanel.add(new JLabel("Usuario:"));
+        addLabel(formPanel, "Usuario:");
         formPanel.add(txtUsuario);
-        formPanel.add(new JLabel("Contraseña:"));
+        addLabel(formPanel, "Contraseña:");
         formPanel.add(txtPassword);
-        formPanel.add(new JLabel("Rol:"));
+        addLabel(formPanel, "Rol:");
         formPanel.add(cbRol);
 
         String[] columnNames = { "ID", "Usuario", "Rol" };
@@ -84,7 +83,10 @@ public class UsuariosPanel extends JPanel {
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
 
+        Theme.styleTable(table);
+
         JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.getViewport().setBackground(Theme.COLOR_SECONDARY);
         add(scrollPane, BorderLayout.CENTER);
 
         // Sorting
@@ -106,12 +108,12 @@ public class UsuariosPanel extends JPanel {
         });
 
         JPanel btnPanel = new JPanel(new FlowLayout());
-        btnPanel.setBackground(new Color(245, 240, 220));
+        btnPanel.setBackground(Theme.COLOR_PRIMARY);
 
-        JButton btnAdd = createButton("Agregar");
-        JButton btnUpdate = createButton("Actualizar");
-        JButton btnDelete = createButton("Eliminar");
-        JButton btnClear = createButton("Limpiar");
+        JButton btnAdd = Theme.createStyledButton("Agregar");
+        JButton btnUpdate = Theme.createStyledButton("Actualizar");
+        JButton btnDelete = Theme.createStyledButton("Eliminar");
+        JButton btnClear = Theme.createStyledButton("Limpiar");
 
         btnPanel.add(btnAdd);
         btnPanel.add(btnUpdate);
@@ -119,6 +121,8 @@ public class UsuariosPanel extends JPanel {
         btnPanel.add(btnClear);
 
         VoiceButton btnVoice = new VoiceButton();
+        btnVoice.setBackground(Theme.COLOR_ACCENT_GOLD);
+        btnVoice.setForeground(Theme.COLOR_PRIMARY);
         btnPanel.add(btnVoice);
 
         JPanel southContainer = new JPanel(new BorderLayout());
@@ -148,12 +152,11 @@ public class UsuariosPanel extends JPanel {
         });
     }
 
-    private JButton createButton(String text) {
-        JButton btn = new JButton(text);
-        btn.setBackground(BTN_DEFAULT);
-        btn.setForeground(TXT_MAIN);
-        btn.setFocusPainted(false);
-        return btn;
+    private void addLabel(JPanel panel, String text) {
+        JLabel lbl = new JLabel(text);
+        lbl.setForeground(Theme.COLOR_TEXT);
+        lbl.setFont(Theme.FONT_BOLD);
+        panel.add(lbl);
     }
 
     private void loadData() {
@@ -179,7 +182,8 @@ public class UsuariosPanel extends JPanel {
         try (Connection conn = DatabaseHelper.connect();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, txtUsuario.getText());
-            pstmt.setString(2, txtPassword.getText());
+            String hashed = proyecto.util.PasswordUtil.hashPassword(txtPassword.getText());
+            pstmt.setString(2, hashed);
             pstmt.setString(3, (String) cbRol.getSelectedItem());
             pstmt.executeUpdate();
             loadData();
@@ -199,7 +203,8 @@ public class UsuariosPanel extends JPanel {
         try (Connection conn = DatabaseHelper.connect();
                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, txtUsuario.getText());
-            pstmt.setString(2, txtPassword.getText());
+            String hashed = proyecto.util.PasswordUtil.hashPassword(txtPassword.getText());
+            pstmt.setString(2, hashed);
             pstmt.setString(3, (String) cbRol.getSelectedItem());
             pstmt.setInt(4, id);
             pstmt.executeUpdate();

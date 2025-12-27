@@ -1,9 +1,7 @@
 package proyecto;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.sql.Connection;
@@ -26,6 +24,8 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import javax.swing.RowFilter;
 
+import proyecto.util.Theme;
+
 public class PagosPanel extends JPanel {
 
     private JTable table;
@@ -33,36 +33,39 @@ public class PagosPanel extends JPanel {
     private JTextField txtSearch;
     private JComboBox<String> cbFiltroMetodo;
 
-    // Theme Colors
-    private final Color BTN_DEFAULT = new Color(199, 179, 106);
-    private final Color TXT_MAIN = new Color(60, 45, 20);
-    private final Color BG_PANEL = new Color(245, 240, 220);
-
     public PagosPanel() {
         setLayout(new BorderLayout(10, 10));
-        setBackground(BG_PANEL);
+        Theme.applyTheme(this);
 
         // Title
         JLabel lblTitle = new JLabel("Gestión de Pagos");
-        lblTitle.setFont(new Font("Serif", Font.BOLD, 24));
-        lblTitle.setForeground(TXT_MAIN);
+        lblTitle.setFont(Theme.FONT_TITLE);
+        lblTitle.setForeground(Theme.COLOR_ACCENT_GOLD);
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
         add(lblTitle, BorderLayout.NORTH);
 
         // Filter Panel
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        filterPanel.setBackground(BG_PANEL);
-        filterPanel.setBorder(BorderFactory.createTitledBorder("Filtros"));
+        filterPanel.setBackground(Theme.COLOR_SECONDARY);
+        filterPanel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(Theme.COLOR_ACCENT_GOLD), "Filtros", 
+            javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, 
+            javax.swing.border.TitledBorder.DEFAULT_POSITION, 
+            Theme.FONT_REGULAR, Theme.COLOR_ACCENT_GOLD));
 
-        filterPanel.add(new JLabel("Buscar Cliente:"));
+        JLabel lblClient = new JLabel("Buscar Cliente:");
+        lblClient.setForeground(Theme.COLOR_TEXT);
+        filterPanel.add(lblClient);
         txtSearch = new JTextField(15);
         filterPanel.add(txtSearch);
 
-        filterPanel.add(new JLabel("Método de Pago:"));
+        JLabel lblMetodo = new JLabel("Método de Pago:");
+        lblMetodo.setForeground(Theme.COLOR_TEXT);
+        filterPanel.add(lblMetodo);
         cbFiltroMetodo = new JComboBox<>(new String[] { "Todos", "Efectivo", "Tarjeta" });
         filterPanel.add(cbFiltroMetodo);
 
-        JButton btnRefresh = createButton("Refrescar");
+        JButton btnRefresh = Theme.createStyledButton("Refrescar");
         filterPanel.add(btnRefresh);
 
         // Table
@@ -80,11 +83,14 @@ public class PagosPanel extends JPanel {
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
 
+        Theme.styleTable(table);
+
         // Configure Sorter
         TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModel);
         table.setRowSorter(sorter);
 
         JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.getViewport().setBackground(Theme.COLOR_SECONDARY);
 
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.add(filterPanel, BorderLayout.NORTH);
@@ -94,12 +100,14 @@ public class PagosPanel extends JPanel {
 
         // Bottom Actions
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        actionPanel.setBackground(BG_PANEL);
+        actionPanel.setBackground(Theme.COLOR_PRIMARY);
 
-        JButton btnAnular = createButton("Anular Pago");
+        JButton btnAnular = Theme.createStyledButton("Anular Pago");
         actionPanel.add(btnAnular);
 
         VoiceButton btnVoice = new VoiceButton();
+        btnVoice.setBackground(Theme.COLOR_ACCENT_GOLD);
+        btnVoice.setForeground(Theme.COLOR_PRIMARY);
         actionPanel.add(btnVoice);
 
         add(actionPanel, BorderLayout.SOUTH);
@@ -128,14 +136,6 @@ public class PagosPanel extends JPanel {
 
         // Initial Load
         loadData();
-    }
-
-    private JButton createButton(String text) {
-        JButton btn = new JButton(text);
-        btn.setBackground(BTN_DEFAULT);
-        btn.setForeground(TXT_MAIN);
-        btn.setFocusPainted(false);
-        return btn;
     }
 
     private void loadData() {

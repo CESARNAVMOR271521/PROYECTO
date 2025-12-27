@@ -1,10 +1,8 @@
 package proyecto;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.GridLayout;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -18,6 +16,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 import proyecto.vista.TicketWindow;
+import proyecto.util.Theme;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -29,6 +28,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 
 public class VentasPanel extends JPanel {
@@ -42,44 +42,50 @@ public class VentasPanel extends JPanel {
     private ButtonGroup bgPago;
 
     private ArrayList<Integer> clienteIds = new ArrayList<>();
-    private ArrayList<Integer> itemIds = new ArrayList<>(); // IDs of currently loaded items (products or services)
+    private ArrayList<Integer> itemIds = new ArrayList<>(); 
     private ArrayList<Double> itemPrices = new ArrayList<>();
-
-    private final Color BTN_DEFAULT = new Color(199, 179, 106);
-    private final Color TXT_MAIN = new Color(60, 45, 20);
 
     public VentasPanel() {
         setLayout(new BorderLayout(10, 10));
-        setBackground(new Color(245, 240, 220));
+        Theme.applyTheme(this);
 
         JLabel lblTitle = new JLabel("Punto de Venta");
-        lblTitle.setFont(new Font("Serif", Font.BOLD, 24));
-        lblTitle.setForeground(TXT_MAIN);
+        lblTitle.setFont(Theme.FONT_TITLE);
+        lblTitle.setForeground(Theme.COLOR_ACCENT_GOLD);
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        add(lblTitle, BorderLayout.NORTH);
+        
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(Theme.COLOR_PRIMARY);
+        headerPanel.add(lblTitle, BorderLayout.CENTER);
+        add(headerPanel, BorderLayout.NORTH);
 
         // Selection Panel
         JPanel selectionPanel = new JPanel(new GridLayout(3, 3, 5, 5));
-        selectionPanel.setBorder(BorderFactory.createTitledBorder("Agregar Item"));
-        selectionPanel.setBackground(new Color(245, 240, 220));
+        TitledBorder selectionBorder = BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(Theme.COLOR_ACCENT_GOLD), "Agregar Item");
+        selectionBorder.setTitleColor(Theme.COLOR_ACCENT_GOLD);
+        selectionBorder.setTitleFont(Theme.FONT_BOLD);
+        
+        selectionPanel.setBorder(selectionBorder);
+        selectionPanel.setBackground(Theme.COLOR_SECONDARY);
 
         cbCliente = new JComboBox<>();
         cbTipoItem = new JComboBox<>(new String[] { "Servicio", "Producto" });
         cbItem = new JComboBox<>();
         txtCantidad = new JTextField("1");
+        
+        JButton btnAdd = Theme.createStyledButton("Agregar al Carrito");
 
-        JButton btnAdd = createButton("Agregar al Carrito");
-
-        selectionPanel.add(new JLabel("Cliente:"));
+        addLabel(selectionPanel, "Cliente:");
         selectionPanel.add(cbCliente);
         selectionPanel.add(new JLabel("")); // Spacer
 
-        selectionPanel.add(new JLabel("Tipo:"));
+        addLabel(selectionPanel, "Tipo:");
         selectionPanel.add(cbTipoItem);
-        selectionPanel.add(new JLabel("Item:"));
-
+        addLabel(selectionPanel, "Item:");
+        
         selectionPanel.add(cbItem);
-        selectionPanel.add(new JLabel("Cantidad:"));
+        addLabel(selectionPanel, "Cantidad:");
         selectionPanel.add(txtCantidad);
 
         // Cart Table
@@ -90,54 +96,56 @@ public class VentasPanel extends JPanel {
         cartTable.getColumnModel().getColumn(1).setMinWidth(0);
         cartTable.getColumnModel().getColumn(1).setMaxWidth(0);
         cartTable.getColumnModel().getColumn(1).setWidth(0);
+        
+        Theme.styleTable(cartTable);
 
         JScrollPane scrollPane = new JScrollPane(cartTable);
+        scrollPane.getViewport().setBackground(Theme.COLOR_SECONDARY);
 
         // Action Panel
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        actionPanel.setBackground(new Color(245, 240, 220));
+        actionPanel.setBackground(Theme.COLOR_PRIMARY);
 
         txtTotal = new JTextField(10);
         txtTotal.setEditable(false);
         txtTotal.setText("0.00");
 
-        JButton btnProcess = createButton("Procesar Venta");
-        JButton btnClear = createButton("Cancelar");
-        JButton btnAddCart = createButton("Agregar Item"); // Moving button here for better layout flow or keeping in
-                                                           // grid
+        JButton btnProcess = Theme.createStyledButton("Procesar Venta");
+        JButton btnClear = Theme.createStyledButton("Cancelar");
 
-        // Re-adding Add button to selection panel as intended above
-        // selectionPanel.add(btnAdd); // This was missing in the grid layout count
-        // logic if I wanted it there
-
-        // Let's reorganize slightly
         JPanel topContainer = new JPanel(new BorderLayout());
         topContainer.add(selectionPanel, BorderLayout.CENTER);
         JPanel addItemPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        addItemPanel.setBackground(new Color(245, 240, 220));
+        addItemPanel.setBackground(Theme.COLOR_SECONDARY);
 
-        // Add Voice Button
         VoiceButton btnVoice = new VoiceButton();
+        btnVoice.setBackground(Theme.COLOR_ACCENT_GOLD);
+        btnVoice.setForeground(Theme.COLOR_PRIMARY);
+        
         addItemPanel.add(btnVoice);
-
         addItemPanel.add(btnAdd);
         topContainer.add(addItemPanel, BorderLayout.SOUTH);
 
         add(topContainer, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
 
-        actionPanel.add(new JLabel("Total: "));
+        addLabel(actionPanel, "Total: ");
         actionPanel.add(txtTotal);
 
         // Payment Method
         rbEfectivo = new JRadioButton("Efectivo");
         rbTarjeta = new JRadioButton("Tarjeta");
+        rbEfectivo.setBackground(Theme.COLOR_PRIMARY);
+        rbEfectivo.setForeground(Theme.COLOR_TEXT);
+        rbTarjeta.setBackground(Theme.COLOR_PRIMARY);
+        rbTarjeta.setForeground(Theme.COLOR_TEXT);
+        
         bgPago = new ButtonGroup();
         bgPago.add(rbEfectivo);
         bgPago.add(rbTarjeta);
         rbEfectivo.setSelected(true); // Default
 
-        actionPanel.add(new JLabel(" | Pago: "));
+        addLabel(actionPanel, " | Pago: ");
         actionPanel.add(rbEfectivo);
         actionPanel.add(rbTarjeta);
 
@@ -162,13 +170,12 @@ public class VentasPanel extends JPanel {
         loadClientes();
         loadItems(); // Initial load
     }
-
-    private JButton createButton(String text) {
-        JButton btn = new JButton(text);
-        btn.setBackground(BTN_DEFAULT);
-        btn.setForeground(TXT_MAIN);
-        btn.setFocusPainted(false);
-        return btn;
+    
+    private void addLabel(JPanel panel, String text) {
+        JLabel lbl = new JLabel(text);
+        lbl.setForeground(Theme.COLOR_TEXT);
+        lbl.setFont(Theme.FONT_BOLD);
+        panel.add(lbl);
     }
 
     private void loadClientes() {
@@ -268,6 +275,31 @@ public class VentasPanel extends JPanel {
                                                                          // strictly
         Double total = Double.parseDouble(txtTotal.getText());
         String fecha = LocalDate.now().toString();
+
+        // New Logic for Cash Payment Amount
+        if (rbEfectivo.isSelected()) {
+            String input = JOptionPane.showInputDialog(this, "Total: $" + total + "\nIngrese monto recibido:", "Pago en Efectivo", JOptionPane.QUESTION_MESSAGE);
+            
+            if (input == null || input.trim().isEmpty()) {
+                return; // Cancelled
+            }
+            
+            try {
+                double montoRecibido = Double.parseDouble(input);
+                
+                if (montoRecibido < total) {
+                    JOptionPane.showMessageDialog(this, "Monto insuficiente. Faltan: $" + String.format("%.2f", total - montoRecibido), "Error de Pago", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                double cambio = montoRecibido - total;
+                JOptionPane.showMessageDialog(this, "Venta Exitosa.\nSu cambio: $" + String.format("%.2f", cambio), "Pago Completado", JOptionPane.INFORMATION_MESSAGE);
+                
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Monto inválido. Ingrese un número válido.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
 
         try (Connection conn = DatabaseHelper.connect()) {
             conn.setAutoCommit(false); // Transaction
@@ -375,3 +407,5 @@ public class VentasPanel extends JPanel {
         }
     }
 }
+
+

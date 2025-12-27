@@ -28,6 +28,7 @@ public class ReconocimientoVoz {
         try {
             // Cargar el modelo
             String[] possiblePaths = {
+                "models/vosk-model-small-es-0.42",
                 "vosk-model-small-es-0.42",
                 "../vosk-model-small-es-0.42",
                 "src/vosk-model-small-es-0.42"

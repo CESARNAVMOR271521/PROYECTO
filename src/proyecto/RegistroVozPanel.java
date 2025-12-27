@@ -1,9 +1,7 @@
 package proyecto;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.util.List;
 
 import javax.swing.JButton;
@@ -20,6 +18,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 
 import proyecto.dao.RegistroVozDAO;
+import proyecto.util.Theme;
 
 public class RegistroVozPanel extends JPanel {
 
@@ -28,28 +27,27 @@ public class RegistroVozPanel extends JPanel {
     private JTextField txtBuscar;
     private RegistroVozDAO dao;
 
-    // Theme Colors
-    private final Color BTN_DEFAULT = new Color(199, 179, 106);
-    private final Color TXT_MAIN = new Color(60, 45, 20);
-
     public RegistroVozPanel() {
         dao = new RegistroVozDAO();
         setLayout(new BorderLayout(10, 10));
-        setBackground(new Color(245, 240, 220));
+        Theme.applyTheme(this);
 
         // Header
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(new Color(245, 240, 220));
+        headerPanel.setBackground(Theme.COLOR_PRIMARY);
 
         JLabel lblTitle = new JLabel("Historial de Comandos de Voz");
-        lblTitle.setFont(new Font("Serif", Font.BOLD, 24));
-        lblTitle.setForeground(TXT_MAIN);
+        lblTitle.setFont(Theme.FONT_TITLE);
+        lblTitle.setForeground(Theme.COLOR_ACCENT_GOLD);
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
         headerPanel.add(lblTitle, BorderLayout.NORTH);
 
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        searchPanel.setBackground(new Color(245, 240, 220));
-        searchPanel.add(new JLabel("Buscar:"));
+        searchPanel.setBackground(Theme.COLOR_PRIMARY);
+        JLabel lblBuscar = new JLabel("Buscar:");
+        lblBuscar.setForeground(Theme.COLOR_TEXT);
+        searchPanel.add(lblBuscar);
+        
         txtBuscar = new JTextField(20);
         searchPanel.add(txtBuscar);
         headerPanel.add(searchPanel, BorderLayout.SOUTH);
@@ -65,7 +63,10 @@ public class RegistroVozPanel extends JPanel {
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        Theme.styleTable(table);
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.getViewport().setBackground(Theme.COLOR_SECONDARY);
+        add(scrollPane, BorderLayout.CENTER);
 
         // Sorting
         TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModel);
@@ -86,12 +87,9 @@ public class RegistroVozPanel extends JPanel {
         });
 
         JPanel btnPanel = new JPanel(new FlowLayout());
-        btnPanel.setBackground(new Color(245, 240, 220));
+        btnPanel.setBackground(Theme.COLOR_PRIMARY);
 
-        JButton btnRefresh = new JButton("Actualizar");
-        btnRefresh.setBackground(BTN_DEFAULT);
-        btnRefresh.setForeground(TXT_MAIN);
-        btnRefresh.setFocusPainted(false);
+        JButton btnRefresh = Theme.createStyledButton("Actualizar");
         btnRefresh.addActionListener(e -> loadData());
 
         btnPanel.add(btnRefresh);

@@ -32,6 +32,18 @@ public class TicketWindow extends JDialog {
 
         contentPanel.add(lblHeader);
         contentPanel.add(Box.createVerticalStrut(5));
+
+        // Logo
+        try {
+            ImageIcon icon = new ImageIcon(new ImageIcon("src/img/logo.jpg").getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH));
+            JLabel lblLogo = new JLabel(icon);
+            lblLogo.setAlignmentX(Component.CENTER_ALIGNMENT);
+            contentPanel.add(lblLogo);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        contentPanel.add(Box.createVerticalStrut(5));
         contentPanel.add(lblDate);
         contentPanel.add(Box.createVerticalStrut(20));
 

@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.function.Consumer;
 
 public class LoginFrame extends JFrame {
 
@@ -16,7 +17,7 @@ public class LoginFrame extends JFrame {
     private JTextField txtUsuario;
     private JPasswordField txtPassword;
     private UsuarioSistemaDAO usuarioDAO;
-    private Runnable onSuccess;
+    private Consumer<LoadingFrame> onSuccess;
 
     // Colores del tema (Godhome Style)
     private final Color BG_MARBLE = new Color(233, 227, 200);
@@ -25,18 +26,27 @@ public class LoginFrame extends JFrame {
     private final Color BTN_HOVER = new Color(228, 204, 130);
     private final Color TXT_MAIN = new Color(60, 45, 20);
 
-    public LoginFrame(Runnable onSuccess) {
+    private JProgressBar progressBar;
+    private JButton btnEntrar;
+    private JButton btnRegistrar;
+
+    public LoginFrame(Consumer<LoadingFrame> onSuccess) {
         this.onSuccess = onSuccess;
         this.usuarioDAO = new UsuarioSistemaDAO();
 
         setTitle("Login - Barbería Chupirules");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(100, 100, 450, 400);
+        setBounds(100, 100, 450, 450); // Increased height for progress bar
         setLocationRelativeTo(null);
         setResizable(false);
+        try {
+            setIconImage(Toolkit.getDefaultToolkit().getImage("src/img/logo.jpg"));
+        } catch (Exception e) {
+            System.err.println("Error loading icon: " + e.getMessage());
+        }
 
         contentPane = new JPanel();
-        contentPane.setBackground(BG_MARBLE);
+        contentPane.setBackground(proyecto.util.Theme.COLOR_PRIMARY); // Navy Background
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
         contentPane.setLayout(null);
@@ -44,42 +54,43 @@ public class LoginFrame extends JFrame {
         // Header
         JPanel panelHeader = new JPanel();
         panelHeader.setBounds(0, 0, 434, 60);
-        panelHeader.setBackground(BG_GOLD_DARK);
+        panelHeader.setBackground(proyecto.util.Theme.COLOR_SECONDARY);
+        panelHeader.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, proyecto.util.Theme.COLOR_ACCENT_GOLD));
         contentPane.add(panelHeader);
         panelHeader.setLayout(new BorderLayout(0, 0));
 
         JLabel lblTitulo = new JLabel("INICIAR SESIÓN");
         lblTitulo.setHorizontalAlignment(SwingConstants.CENTER);
-        lblTitulo.setFont(new Font("Serif", Font.BOLD, 22));
-        lblTitulo.setForeground(Color.WHITE);
+        lblTitulo.setFont(proyecto.util.Theme.FONT_TITLE);
+        lblTitulo.setForeground(proyecto.util.Theme.COLOR_ACCENT_GOLD);
         panelHeader.add(lblTitulo);
 
         // Formulario
         JLabel lblUsuario = new JLabel("Usuario:");
-        lblUsuario.setFont(new Font("Serif", Font.BOLD, 14));
-        lblUsuario.setForeground(TXT_MAIN);
+        lblUsuario.setFont(proyecto.util.Theme.FONT_BOLD);
+        lblUsuario.setForeground(proyecto.util.Theme.COLOR_TEXT);
         lblUsuario.setBounds(50, 100, 100, 20);
         contentPane.add(lblUsuario);
 
         txtUsuario = new JTextField();
         txtUsuario.setBounds(50, 125, 330, 30);
-        txtUsuario.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        txtUsuario.setFont(proyecto.util.Theme.FONT_REGULAR);
         contentPane.add(txtUsuario);
         txtUsuario.setColumns(10);
 
         JLabel lblPassword = new JLabel("Contraseña:");
-        lblPassword.setFont(new Font("Serif", Font.BOLD, 14));
-        lblPassword.setForeground(TXT_MAIN);
+        lblPassword.setFont(proyecto.util.Theme.FONT_BOLD);
+        lblPassword.setForeground(proyecto.util.Theme.COLOR_TEXT);
         lblPassword.setBounds(50, 170, 100, 20);
         contentPane.add(lblPassword);
 
         txtPassword = new JPasswordField();
         txtPassword.setBounds(50, 195, 330, 30);
-        txtPassword.setFont(new Font("SansSerif", Font.PLAIN, 14));
+        txtPassword.setFont(proyecto.util.Theme.FONT_REGULAR);
         contentPane.add(txtPassword);
 
         // Botón Entrar
-        JButton btnEntrar = createStyledButton("ENTRAR");
+        btnEntrar = proyecto.util.Theme.createStyledButton("ENTRAR");
         btnEntrar.setBounds(50, 260, 150, 40);
         btnEntrar.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -89,9 +100,10 @@ public class LoginFrame extends JFrame {
         contentPane.add(btnEntrar);
 
         // Botón Registrarse
-        JButton btnRegistrar = createStyledButton("REGISTRARSE");
+        btnRegistrar = proyecto.util.Theme.createStyledButton("REGISTRARSE");
         btnRegistrar.setBounds(230, 260, 150, 40);
         btnRegistrar.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 abrirRegistro();
             }
@@ -103,42 +115,24 @@ public class LoginFrame extends JFrame {
         String usuario = txtUsuario.getText();
         String password = new String(txtPassword.getPassword());
 
-        UsuarioSistema u = usuarioDAO.login(usuario, password);
+        if (usuario.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Ingrese usuario y contraseña", "Error", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
-        if (u != null) {
+        UsuarioSistema user = usuarioDAO.login(usuario, password);
+        if (user != null) {
             // Login exitoso
-            this.dispose(); // Cerrar login
-            // Iniciar SlashScreen y luego Main
-            SplashScreen splash = new SplashScreen(onSuccess);
-            splash.start();
+            dispose(); // Calla el login frame
+            // Abre el loading frame
+            LoadingFrame loading = new LoadingFrame(onSuccess);
+            loading.startLoading();
         } else {
-            JOptionPane.showMessageDialog(this, "Credenciales incorrectas", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Usuario o contraseña incorrectos", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void abrirRegistro() {
-        RegistroDialog reg = new RegistroDialog(this);
-        reg.setVisible(true);
-    }
-
-    private JButton createStyledButton(String text) {
-        JButton btn = new JButton(text);
-        btn.setBackground(BTN_DEFAULT);
-        btn.setForeground(TXT_MAIN);
-        btn.setFont(new Font("Serif", Font.BOLD, 12));
-        btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createLineBorder(BG_GOLD_DARK, 2));
-        btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-
-        btn.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent evt) {
-                btn.setBackground(BTN_HOVER);
-            }
-
-            public void mouseExited(MouseEvent evt) {
-                btn.setBackground(BTN_DEFAULT);
-            }
-        });
-        return btn;
+        new RegistroDialog(this).setVisible(true);
     }
 }

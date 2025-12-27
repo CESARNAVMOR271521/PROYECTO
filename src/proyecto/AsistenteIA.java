@@ -39,12 +39,33 @@ public class AsistenteIA {
             String respuesta = aiClient.sendPrompt(prompt);
             System.out.println("IA Respondió: " + respuesta);
 
-            final String comando = respuesta.trim().toUpperCase().replace(".", "");
+            // Limpieza de respuesta (quitar markdown, espacios extra)
+            String cleanResponse = respuesta.replaceAll("\\*\\*", "") // quitar negritas markdown
+                                           .replaceAll("`", "")      // quitar codigo markdown
+                                           .trim();
+            
+            // Buscar la palabra clave
+            final String comando = extraerComando(cleanResponse);
 
             SwingUtilities.invokeLater(() -> {
                 ejecutarAccion(comando);
             });
         }).start();
+    }
+
+    private String extraerComando(String response) {
+        String upper = response.toUpperCase();
+        
+        // Lista de comandos válidos para buscar en la respuesta si la IA es muy dicharachera
+        String[] validos = {"CLIENTES", "BARBEROS", "SERVICIOS", "CITAS", "VENTAS", "DETALLE", "PRODUCTOS", "USUARIOS", "PAGOS", "FACTURAS", "PROVEEDORES", "COMPRAS", "VOZ_LOGS", "SALIR"};
+        
+        for (String cmd : validos) {
+            if (upper.contains(cmd)) {
+                return cmd;
+            }
+        }
+        
+        return "NULL";
     }
 
     private void ejecutarAccion(String comando) {
@@ -58,8 +79,12 @@ public class AsistenteIA {
             // Intentar navegar
             mainApp.setModuleActive(comando);
             System.out.println("Navegando a: " + comando);
+            
+            // Voice Feedback
+            TextToSpeech.speak("Abriendo módulo " + comando.toLowerCase());
         } catch (Exception e) {
             System.err.println("Error al navegar: " + e.getMessage());
+            TextToSpeech.speak("No pude encontrar el módulo solicitado.");
         }
     }
     

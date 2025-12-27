@@ -9,6 +9,8 @@ import proyecto.modelo.CompraProveedor;
 import proyecto.modelo.DetalleCompra;
 import proyecto.modelo.Producto;
 import proyecto.modelo.Proveedor;
+import proyecto.util.Theme;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -16,11 +18,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 public class ComprasPanel extends JPanel {
-
-    // 🎨 ESTILOS "SALÓN DE LOS DIOSES"
-    private final Color BG_PANEL = new Color(245, 240, 220);
-    private final Color BTN_DEFAULT = new Color(199, 179, 106);
-    private final Color TXT_MAIN = new Color(60, 45, 20);
 
     private CompraProveedorDAO compraDAO;
     private DetalleCompraDAO detalleDAO;
@@ -31,7 +28,7 @@ public class ComprasPanel extends JPanel {
     private JComboBox<String> cbProveedor;
     private JComboBox<String> cbProducto;
     private JTextField txtCantidad;
-    private JTextField txtCosto; // Costo por unidad al momento de la compra
+    private JTextField txtCosto;
     private JTextField txtTotal;
 
     private JTable cartTable;
@@ -48,57 +45,61 @@ public class ComprasPanel extends JPanel {
         productoDAO = new ProductoDAO();
 
         setLayout(new BorderLayout(10, 10));
-        setBackground(BG_PANEL);
+        Theme.applyTheme(this);
 
         // Header
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(Theme.COLOR_PRIMARY);
+
         JLabel lblTitle = new JLabel("Registro de Compras a Proveedores");
-        lblTitle.setFont(new Font("Serif", Font.BOLD, 24));
-        lblTitle.setForeground(TXT_MAIN);
+        lblTitle.setFont(Theme.FONT_TITLE);
+        lblTitle.setForeground(Theme.COLOR_ACCENT_GOLD);
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        add(lblTitle, BorderLayout.NORTH);
+        headerPanel.add(lblTitle, BorderLayout.NORTH);
 
         // Selection Panel
         JPanel selectionPanel = new JPanel(new GridLayout(4, 2, 5, 5));
-        selectionPanel.setBorder(BorderFactory.createTitledBorder("Agregar Producto"));
-        selectionPanel.setBackground(BG_PANEL);
+        selectionPanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Theme.COLOR_ACCENT_GOLD), "Agregar Producto",
+                javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, 
+                javax.swing.border.TitledBorder.DEFAULT_POSITION, 
+                Theme.FONT_REGULAR, Theme.COLOR_ACCENT_GOLD));
+        selectionPanel.setBackground(Theme.COLOR_SECONDARY);
 
         cbProveedor = new JComboBox<>();
         cbProducto = new JComboBox<>();
         txtCantidad = new JTextField("1");
         txtCosto = new JTextField("0.00");
 
-        selectionPanel.add(new JLabel("Proveedor:"));
+        addLabel(selectionPanel, "Proveedor:");
         selectionPanel.add(cbProveedor);
-        selectionPanel.add(new JLabel("Producto:"));
+        addLabel(selectionPanel, "Producto:");
         selectionPanel.add(cbProducto);
-        selectionPanel.add(new JLabel("Cantidad:"));
+        addLabel(selectionPanel, "Cantidad:");
         selectionPanel.add(txtCantidad);
-        selectionPanel.add(new JLabel("Costo Unitario ($):"));
+        addLabel(selectionPanel, "Costo Unitario ($):");
         selectionPanel.add(txtCosto);
 
         // Buttons & Voice
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        btnPanel.setBackground(BG_PANEL);
+        btnPanel.setBackground(Theme.COLOR_SECONDARY);
 
         VoiceButton btnVoice = new VoiceButton();
-        JButton btnAdd = createButton("Agregar al Pedido");
+        btnVoice.setBackground(Theme.COLOR_ACCENT_GOLD);
+        btnVoice.setForeground(Theme.COLOR_PRIMARY);
+        
+        JButton btnAdd = Theme.createStyledButton("Agregar al Pedido");
 
         btnPanel.add(btnVoice);
         btnPanel.add(btnAdd);
 
         JPanel topContainer = new JPanel(new BorderLayout());
-        topContainer.setBackground(BG_PANEL);
+        topContainer.setBackground(Theme.COLOR_SECONDARY);
         topContainer.add(selectionPanel, BorderLayout.CENTER);
         topContainer.add(btnPanel, BorderLayout.SOUTH);
-        add(topContainer, BorderLayout.NORTH); // Placed at North inside the main North? No, let's fix layout.
-
-        // Fix layout structure: Title NORTH, Form CENTER-TOP, Table CENTER.
-        // Actually, let's put Form in NORTH (under title) and Table in CENTER.
-        JPanel headerGroup = new JPanel(new BorderLayout());
-        headerGroup.setBackground(BG_PANEL);
-        headerGroup.add(lblTitle, BorderLayout.NORTH);
-        headerGroup.add(topContainer, BorderLayout.CENTER);
-        add(headerGroup, BorderLayout.NORTH);
+        
+        headerPanel.add(topContainer, BorderLayout.CENTER);
+        add(headerPanel, BorderLayout.NORTH);
 
         // Cart Table
         String[] columnNames = { "ID Prod", "Producto", "Costo Unit.", "Cantidad", "Subtotal" };
@@ -114,20 +115,27 @@ public class ComprasPanel extends JPanel {
         cartTable.getColumnModel().getColumn(0).setMaxWidth(0);
         cartTable.getColumnModel().getColumn(0).setWidth(0);
 
-        add(new JScrollPane(cartTable), BorderLayout.CENTER);
+        Theme.styleTable(cartTable);
+        
+        JScrollPane scrollPane = new JScrollPane(cartTable);
+        scrollPane.getViewport().setBackground(Theme.COLOR_SECONDARY);
+        add(scrollPane, BorderLayout.CENTER);
 
         // Action Panel (Bottom)
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        actionPanel.setBackground(BG_PANEL);
+        actionPanel.setBackground(Theme.COLOR_PRIMARY);
 
         txtTotal = new JTextField(10);
         txtTotal.setEditable(false);
         txtTotal.setText("0.00");
 
-        JButton btnProcess = createButton("Procesar Compra");
-        JButton btnClear = createButton("Limpiar");
+        JButton btnProcess = Theme.createStyledButton("Procesar Compra");
+        JButton btnClear = Theme.createStyledButton("Limpiar");
 
-        actionPanel.add(new JLabel("Total Compra: "));
+        JLabel lblTotal = new JLabel("Total Compra: ");
+        lblTotal.setForeground(Theme.COLOR_TEXT);
+        lblTotal.setFont(Theme.FONT_BOLD);
+        actionPanel.add(lblTotal);
         actionPanel.add(txtTotal);
         actionPanel.add(btnProcess);
         actionPanel.add(btnClear);
@@ -157,12 +165,11 @@ public class ComprasPanel extends JPanel {
         loadData();
     }
 
-    private JButton createButton(String text) {
-        JButton btn = new JButton(text);
-        btn.setBackground(BTN_DEFAULT);
-        btn.setForeground(TXT_MAIN);
-        btn.setFocusPainted(false);
-        return btn;
+    private void addLabel(JPanel panel, String text) {
+        JLabel lbl = new JLabel(text);
+        lbl.setForeground(Theme.COLOR_TEXT);
+        lbl.setFont(Theme.FONT_BOLD);
+        panel.add(lbl);
     }
 
     private void loadData() {
@@ -174,7 +181,7 @@ public class ComprasPanel extends JPanel {
             cbProveedor.addItem(p.getNombre());
         }
 
-        listaProductos = productoDAO.listar(); // Listar todos, o filtrar por proveedor si se desea lógica compleja
+        listaProductos = productoDAO.listar(); 
         for (Producto p : listaProductos) {
             cbProducto.addItem(p.getNombre());
         }
@@ -257,7 +264,6 @@ public class ComprasPanel extends JPanel {
 
                 if (!detalleDAO.insertar(detalle)) {
                     success = false;
-                    // Consider transaction rollback logic here in a real app
                 }
 
                 if (!inventarioDAO.incrementarStock(idProd, cant)) {

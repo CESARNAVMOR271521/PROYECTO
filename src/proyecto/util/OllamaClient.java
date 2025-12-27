@@ -6,25 +6,85 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 public class OllamaClient {
 
-    private static final String API_URL = "http://localhost:11434/api/generate";
-    private static final String MODEL = "gemma3:12b"; 
+    private static final String API_GENERATE = "http://localhost:11434/api/generate";
+    private static final String API_TAGS = "http://localhost:11434/api/tags";
+    
+    private String modelName = null;
+
+    public OllamaClient() {
+        // Al instanciar, intentamos detectar el modelo
+        this.modelName = getAvailableModel();
+        if (this.modelName == null) {
+            System.err.println("ADVERTENCIA: No se detectó ningún modelo en Ollama.");
+        } else {
+            System.out.println("OllamaClient usará el modelo: " + this.modelName);
+        }
+    }
+
+    private String getAvailableModel() {
+        try {
+            URL url = new URL(API_TAGS);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(2000);
+            
+            if (conn.getResponseCode() != 200) {
+                return null;
+            }
+
+            try (BufferedReader br = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+                StringBuilder response = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) {
+                    response.append(line);
+                }
+                
+                // Parseo manual simple de JSON para encontrar el primer "name": "..."
+                String json = response.toString();
+                // Buscar "name":"
+                String key = "\"name\":\"";
+                int start = json.indexOf(key);
+                if (start != -1) {
+                    start += key.length();
+                    int end = json.indexOf("\"", start);
+                    if (end != -1) {
+                        return json.substring(start, end);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error buscando modelos: " + e.getMessage());
+        }
+        return null; // Fallback o null
+    }
 
     public String sendPrompt(String promptText) {
+        if (modelName == null) {
+            // Reintentar por si se cargó después
+            modelName = getAvailableModel();
+            if (modelName == null) {
+                return "Error: No hay modelo AI disponible (Ollama no responde o sin modelos).";
+            }
+        }
+
         try {
-            URL url = new URL(API_URL);
+            URL url = new URL(API_GENERATE);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");
             conn.setDoOutput(true);
 
             // Escapar comillas y saltos de línea para JSON manual simple
-            String escapedPrompt = promptText.replace("\"", "\\\"").replace("\n", "\\n");
+            String escapedPrompt = promptText.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n");
 
             String jsonInputString = "{"
-                    + "\"model\": \"" + MODEL + "\","
+                    + "\"model\": \"" + modelName + "\","
                     + "\"prompt\": \"" + escapedPrompt + "\","
                     + "\"stream\": false"
                     + "}";
@@ -72,7 +132,11 @@ public class OllamaClient {
             char c = json.charAt(i);
             
             if (escape) {
-                result.append(c);
+                // Manejar caracteres escapados
+                if (c == 'n') result.append('\n');
+                else if (c == 't') result.append('\t');
+                else if (c == 'r') {} // ignorar
+                else result.append(c); // comillas, barras, etc
                 escape = false;
             } else {
                 if (c == '\\') {
@@ -86,7 +150,6 @@ public class OllamaClient {
             }
         }
         
-        // Decodificar escapes comunes de JSON si es necesario (\n, \t, etc)
-        return result.toString().replace("\\n", "\n").replace("\\t", "\t").replace("\\\"", "\"");
+        return result.toString();
     }
 }

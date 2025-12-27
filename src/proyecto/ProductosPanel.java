@@ -1,9 +1,7 @@
 package proyecto;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.GridLayout;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -20,7 +18,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
+
+import proyecto.util.Theme;
 
 public class ProductosPanel extends JPanel {
 
@@ -29,35 +30,31 @@ public class ProductosPanel extends JPanel {
     private JTextField txtNombre, txtDescripcion, txtPrecioVenta, txtPrecioCompra;
     private JTextField txtStock, txtMinimo;
 
-    // Theme Colors
-    private final Color BTN_DEFAULT = new Color(199, 179, 106);
-    private final Color TXT_MAIN = new Color(60, 45, 20);
-
     public ProductosPanel() {
         setLayout(new BorderLayout(10, 10));
-        setBackground(new Color(245, 240, 220));
+        Theme.applyTheme(this);
 
         JLabel lblTitle = new JLabel("Gestión de Productos e Inventario");
-        lblTitle.setFont(new Font("Serif", Font.BOLD, 24));
-        lblTitle.setForeground(TXT_MAIN);
+        lblTitle.setFont(Theme.FONT_TITLE);
+        lblTitle.setForeground(Theme.COLOR_ACCENT_GOLD);
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        add(lblTitle, BorderLayout.NORTH);
-
+        
         // Header Panel with Title and Help Button
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(new Color(245, 240, 220));
+        headerPanel.setBackground(Theme.COLOR_PRIMARY);
         headerPanel.add(lblTitle, BorderLayout.CENTER);
 
         JButton btnHelp = new JButton("?");
-        btnHelp.setFont(new Font("Serif", Font.BOLD, 16));
-        btnHelp.setBackground(new Color(245, 240, 220)); // Match background
-        btnHelp.setBorder(BorderFactory.createLineBorder(TXT_MAIN));
+        btnHelp.setFont(Theme.FONT_BOLD);
+        btnHelp.setBackground(Theme.COLOR_PRIMARY);
+        btnHelp.setForeground(Theme.COLOR_ACCENT_GOLD);
+        btnHelp.setBorder(BorderFactory.createLineBorder(Theme.COLOR_ACCENT_GOLD));
         btnHelp.setFocusPainted(false);
         btnHelp.setPreferredSize(new java.awt.Dimension(30, 30));
         btnHelp.setToolTipText("Ayuda para nuevos usuarios");
 
         JPanel helpContainer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        helpContainer.setBackground(new Color(245, 240, 220));
+        helpContainer.setBackground(Theme.COLOR_PRIMARY);
         helpContainer.add(btnHelp);
         headerPanel.add(helpContainer, BorderLayout.EAST);
 
@@ -78,24 +75,18 @@ public class ProductosPanel extends JPanel {
 
         // Search Panel
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        searchPanel.setBackground(new Color(245, 240, 220));
-        searchPanel.add(new JLabel("Buscar Producto:"));
+        searchPanel.setBackground(Theme.COLOR_PRIMARY);
+        JLabel lblSearch = new JLabel("Buscar Producto:");
+        lblSearch.setForeground(Theme.COLOR_TEXT);
+        searchPanel.add(lblSearch);
+        
         JTextField txtSearch = new JTextField(20);
         searchPanel.add(txtSearch);
 
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
-            public void insertUpdate(javax.swing.event.DocumentEvent e) {
-                filter();
-            }
-
-            public void removeUpdate(javax.swing.event.DocumentEvent e) {
-                filter();
-            }
-
-            public void changedUpdate(javax.swing.event.DocumentEvent e) {
-                filter();
-            }
-
+            public void insertUpdate(javax.swing.event.DocumentEvent e) { filter(); }
+            public void removeUpdate(javax.swing.event.DocumentEvent e) { filter(); }
+            public void changedUpdate(javax.swing.event.DocumentEvent e) { filter(); }
             private void filter() {
                 String text = txtSearch.getText();
                 javax.swing.table.TableRowSorter<DefaultTableModel> sorter = (javax.swing.table.TableRowSorter<DefaultTableModel>) table
@@ -111,54 +102,42 @@ public class ProductosPanel extends JPanel {
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.add(searchPanel, BorderLayout.NORTH);
 
-        // Main form container - changed to BorderLayout to hold grouped panels
+        // Main form container
         JPanel formContainer = new JPanel(new GridLayout(1, 3, 10, 0));
-        formContainer.setBackground(new Color(245, 240, 220));
+        formContainer.setBackground(Theme.COLOR_SECONDARY);
         formContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // Group 1: Product Data
-        JPanel groupProducto = new JPanel(new GridLayout(4, 1, 5, 5));
-        groupProducto.setBorder(BorderFactory.createTitledBorder("Datos del Producto"));
-        groupProducto.setBackground(new Color(245, 240, 220));
-
+        JPanel groupProducto = createGroupPanel("Datos del Producto");
         txtNombre = new JTextField();
         txtNombre.setToolTipText("Ingrese el nombre comercial del producto");
         txtDescripcion = new JTextField();
         txtDescripcion.setToolTipText("Describa brevemente el producto");
-
-        groupProducto.add(new JLabel("Nombre:"));
+        addLabel(groupProducto, "Nombre:");
         groupProducto.add(txtNombre);
-        groupProducto.add(new JLabel("Descripción:"));
+        addLabel(groupProducto, "Descripción:");
         groupProducto.add(txtDescripcion);
 
         // Group 2: Pricing
-        JPanel groupPrecios = new JPanel(new GridLayout(4, 1, 5, 5));
-        groupPrecios.setBorder(BorderFactory.createTitledBorder("Precios"));
-        groupPrecios.setBackground(new Color(245, 240, 220));
-
+        JPanel groupPrecios = createGroupPanel("Precios");
         txtPrecioVenta = new JTextField();
         txtPrecioVenta.setToolTipText("Precio al público");
         txtPrecioCompra = new JTextField();
         txtPrecioCompra.setToolTipText("Costo de adquisición");
-
-        groupPrecios.add(new JLabel("Precio Venta:"));
+        addLabel(groupPrecios, "Precio Venta:");
         groupPrecios.add(txtPrecioVenta);
-        groupPrecios.add(new JLabel("Precio Compra:"));
+        addLabel(groupPrecios, "Precio Compra:");
         groupPrecios.add(txtPrecioCompra);
 
         // Group 3: Inventory
-        JPanel groupInventario = new JPanel(new GridLayout(4, 1, 5, 5));
-        groupInventario.setBorder(BorderFactory.createTitledBorder("Inventario"));
-        groupInventario.setBackground(new Color(245, 240, 220));
-
+        JPanel groupInventario = createGroupPanel("Inventario");
         txtStock = new JTextField("0");
         txtStock.setToolTipText("Cantidad física actual");
         txtMinimo = new JTextField("5");
         txtMinimo.setToolTipText("Alerta de stock bajo");
-
-        groupInventario.add(new JLabel("Stock Actual:"));
+        addLabel(groupInventario, "Stock Actual:");
         groupInventario.add(txtStock);
-        groupInventario.add(new JLabel("Stock Mínimo:"));
+        addLabel(groupInventario, "Stock Mínimo:");
         groupInventario.add(txtMinimo);
 
         formContainer.add(groupProducto);
@@ -178,22 +157,27 @@ public class ProductosPanel extends JPanel {
         table.getColumnModel().getColumn(0).setMaxWidth(0);
         table.getColumnModel().getColumn(0).setWidth(0);
 
+        Theme.styleTable(table);
+
         javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(tableModel);
         table.setRowSorter(sorter);
 
         JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.getViewport().setBackground(Theme.COLOR_SECONDARY);
         centerPanel.add(scrollPane, BorderLayout.CENTER);
         add(centerPanel, BorderLayout.CENTER);
 
         JPanel btnPanel = new JPanel(new FlowLayout());
-        btnPanel.setBackground(new Color(245, 240, 220));
+        btnPanel.setBackground(Theme.COLOR_PRIMARY);
 
-        JButton btnAdd = createButton("Agregar");
-        JButton btnUpdate = createButton("Actualizar");
-        JButton btnDelete = createButton("Eliminar");
-        JButton btnClear = createButton("Limpiar");
+        JButton btnAdd = Theme.createStyledButton("Agregar");
+        JButton btnUpdate = Theme.createStyledButton("Actualizar");
+        JButton btnDelete = Theme.createStyledButton("Eliminar");
+        JButton btnClear = Theme.createStyledButton("Limpiar");
 
         VoiceButton btnVoice = new VoiceButton();
+        btnVoice.setBackground(Theme.COLOR_ACCENT_GOLD);
+        btnVoice.setForeground(Theme.COLOR_PRIMARY);
 
         btnPanel.add(btnAdd);
         btnPanel.add(btnUpdate);
@@ -228,12 +212,22 @@ public class ProductosPanel extends JPanel {
         loadData();
     }
 
-    private JButton createButton(String text) {
-        JButton btn = new JButton(text);
-        btn.setBackground(BTN_DEFAULT);
-        btn.setForeground(TXT_MAIN);
-        btn.setFocusPainted(false);
-        return btn;
+    private JPanel createGroupPanel(String title) {
+        JPanel panel = new JPanel(new GridLayout(4, 1, 5, 5));
+        TitledBorder border = BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(Theme.COLOR_ACCENT_GOLD), title);
+        border.setTitleColor(Theme.COLOR_ACCENT_GOLD);
+        border.setTitleFont(Theme.FONT_BOLD);
+        panel.setBorder(border);
+        panel.setBackground(Theme.COLOR_SECONDARY);
+        return panel;
+    }
+
+    private void addLabel(JPanel panel, String text) {
+        JLabel lbl = new JLabel(text);
+        lbl.setForeground(Theme.COLOR_TEXT);
+        lbl.setFont(Theme.FONT_BOLD);
+        panel.add(lbl);
     }
 
     private void loadData() {
@@ -422,3 +416,4 @@ public class ProductosPanel extends JPanel {
         table.clearSelection();
     }
 }
+

@@ -1,9 +1,7 @@
 package proyecto;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.io.FileOutputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -33,6 +31,7 @@ import com.itextpdf.text.pdf.PdfWriter;
 import proyecto.dao.DetalleVentaDAO;
 import proyecto.dao.FacturaDAO;
 import proyecto.modelo.DetalleVenta;
+import proyecto.util.Theme;
 
 public class FacturasPanel extends JPanel {
 
@@ -42,30 +41,29 @@ public class FacturasPanel extends JPanel {
     private FacturaDAO facturaDAO;
     private DetalleVentaDAO detalleDAO;
 
-    // Using same colors as other panels for consistency
-    private final Color BTN_DEFAULT = new Color(199, 179, 106);
-    private final Color TXT_MAIN = new Color(60, 45, 20);
-
     public FacturasPanel() {
         this.facturaDAO = new FacturaDAO();
         this.detalleDAO = new DetalleVentaDAO();
 
         setLayout(new BorderLayout(10, 10));
-        setBackground(new Color(245, 240, 220));
+        Theme.applyTheme(this);
 
         // Header
         JPanel headerPanel = new JPanel(new BorderLayout());
-        headerPanel.setBackground(new Color(245, 240, 220));
+        headerPanel.setBackground(Theme.COLOR_PRIMARY);
 
         JLabel lblTitle = new JLabel("Gestión de Facturas");
-        lblTitle.setFont(new Font("Serif", Font.BOLD, 24));
-        lblTitle.setForeground(TXT_MAIN);
+        lblTitle.setFont(Theme.FONT_TITLE);
+        lblTitle.setForeground(Theme.COLOR_ACCENT_GOLD);
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
         headerPanel.add(lblTitle, BorderLayout.NORTH);
 
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        searchPanel.setBackground(new Color(245, 240, 220));
-        searchPanel.add(new JLabel("Buscar:"));
+        searchPanel.setBackground(Theme.COLOR_PRIMARY);
+        JLabel lblBuscar = new JLabel("Buscar:");
+        lblBuscar.setForeground(Theme.COLOR_TEXT);
+        searchPanel.add(lblBuscar);
+        
         txtBuscar = new JTextField(20);
         searchPanel.add(txtBuscar);
         headerPanel.add(searchPanel, BorderLayout.SOUTH);
@@ -91,7 +89,9 @@ public class FacturasPanel extends JPanel {
         table.getColumnModel().getColumn(1).setMaxWidth(0);
         table.getColumnModel().getColumn(1).setWidth(0);
 
+        Theme.styleTable(table);
         JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.getViewport().setBackground(Theme.COLOR_SECONDARY);
         add(scrollPane, BorderLayout.CENTER);
 
         // Sorting
@@ -114,19 +114,17 @@ public class FacturasPanel extends JPanel {
 
         // Buttons
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
-        btnPanel.setBackground(new Color(245, 240, 220));
+        btnPanel.setBackground(Theme.COLOR_PRIMARY);
 
-        JButton btnPrint = new JButton("Imprimir PDF");
-        btnPrint.setBackground(BTN_DEFAULT);
-        btnPrint.setForeground(TXT_MAIN);
+        JButton btnPrint = Theme.createStyledButton("Imprimir PDF");
         btnPrint.addActionListener(e -> printSelectedFactura());
 
-        JButton btnRefresh = new JButton("Actualizar");
-        btnRefresh.setBackground(BTN_DEFAULT);
-        btnRefresh.setForeground(TXT_MAIN);
+        JButton btnRefresh = Theme.createStyledButton("Actualizar");
         btnRefresh.addActionListener(e -> loadFacturas());
 
         VoiceButton btnVoice = new VoiceButton();
+        btnVoice.setBackground(Theme.COLOR_ACCENT_GOLD);
+        btnVoice.setForeground(Theme.COLOR_PRIMARY);
 
         btnPanel.add(btnRefresh);
         btnPanel.add(btnPrint);
@@ -181,10 +179,20 @@ public class FacturasPanel extends JPanel {
             PdfWriter.getInstance(document, new FileOutputStream(filename));
             document.open();
 
+            // Logo
+            try {
+                com.itextpdf.text.Image logo = com.itextpdf.text.Image.getInstance("src/img/logo.jpg");
+                logo.scaleToFit(100, 100);
+                logo.setAlignment(com.itextpdf.text.Element.ALIGN_CENTER);
+                document.add(logo);
+            } catch (Exception e) {
+                // Ignore if logo fails
+            }
+
             // Header
-            Font titleFont = new Font(Font.SANS_SERIF, 18, Font.BOLD);
-            Paragraph title = new Paragraph("BARBERÍA CHUPIRULES - FACTURA", new com.itextpdf.text.Font(
-                    com.itextpdf.text.Font.FontFamily.HELVETICA, 18, com.itextpdf.text.Font.BOLD));
+            com.itextpdf.text.Font titleFont = new com.itextpdf.text.Font(
+                    com.itextpdf.text.Font.FontFamily.HELVETICA, 18, com.itextpdf.text.Font.BOLD);
+            Paragraph title = new Paragraph("BARBERÍA CHUPIRULES - FACTURA", titleFont);
             title.setAlignment(com.itextpdf.text.Element.ALIGN_CENTER);
             document.add(title);
             document.add(new Paragraph(" ")); // Spacer
