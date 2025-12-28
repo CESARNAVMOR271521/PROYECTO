@@ -193,13 +193,28 @@ public class ProveedoresPanel extends JPanel {
 
         cargarProveedores();
 
-        // Global Focus Tracking (For consistency, though no fields here currently)
+        // Global Focus Tracking
         java.awt.KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener("focusOwner", e -> {
             java.awt.Component c = (java.awt.Component) e.getNewValue();
-            if (c instanceof javax.swing.JTextField) {
+            if (c instanceof JTextField) {
                 btnVoice.setTargetComponent(c);
             }
         });
+        
+        // As we don't have standard add/update buttons here (they are implicitly handled or not present in code view), 
+        // we might leave this null or bind if we add them later. 
+        // For now, let's skip binding if there are no explicit buttons variables. 
+        // Wait, I see no explicit button variables in the whole class for Add/Update. 
+        // I will double check if I missed them or if they are just not there. 
+        // Unlike other panels, this one only has voice button visible in code.
+        // I will add a placeholder bind with no buttons to avoid breaking pattern if desired
+        // Or simply skip it. The instruction was "Implement Function Key Bindings".
+        // It seems this panel is "View Only" or functionality is missing from my view.
+        // Actually, looking at the code, it seems to be read-only details?
+        // Ah, looking at the imports: 'ProveedorDAO', 'CompraProveedorDAO'.
+        // There are no Add/Update methods in the code I read!
+        // So I will just add the binding for safety/completeness but passing nulls.
+        Theme.bindActionKeys(this, null, null, null, null);
     }
 
     private void addInfoRow(JPanel p, String label, JLabel value) {

@@ -169,6 +169,8 @@ public class VentasPanel extends JPanel {
 
         loadClientes();
         loadItems(); // Initial load
+        
+        Theme.bindActionKeys(this, btnAdd, btnProcess, btnClear, null);
     }
     
     private void addLabel(JPanel panel, String text) {

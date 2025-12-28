@@ -110,6 +110,8 @@ public class HistorialPanel extends JPanel {
         });
 
         loadData();
+        
+        Theme.bindActionKeys(this, btnRefresh, null, null, null);
     }
 
     public void loadData() {

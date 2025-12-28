@@ -159,6 +159,9 @@ public class BarberosPanel extends JPanel {
         });
 
         loadData();
+        
+        // ⌨️ ACCESOS RÁPIDOS
+        Theme.bindActionKeys(this, btnAdd, btnUpdate, btnDelete, btnClear);
     }
 
     private void addLabel(JPanel panel, String text) {

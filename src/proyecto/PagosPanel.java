@@ -136,6 +136,8 @@ public class PagosPanel extends JPanel {
 
         // Initial Load
         loadData();
+        
+        Theme.bindActionKeys(this, btnRefresh, btnAnular, null, null);
     }
 
     private void loadData() {

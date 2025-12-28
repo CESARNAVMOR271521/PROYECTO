@@ -77,7 +77,7 @@ public class ClientesPanel extends JPanel {
         txtCorreo = new JTextField();
         txtHistorial = new JTextField();
 
-        txtHistorial = new JTextField();
+
 
         addLabel(formPanel, "Nombre:");
         formPanel.add(txtNombre);
@@ -170,6 +170,9 @@ public class ClientesPanel extends JPanel {
         });
 
         loadData();
+        
+        // ⌨️ ACCESOS RÁPIDOS (Shift+F1..F4)
+        Theme.bindActionKeys(this, btnAdd, btnUpdate, btnDelete, btnClear);
     }
 
     private void addLabel(JPanel panel, String text) {

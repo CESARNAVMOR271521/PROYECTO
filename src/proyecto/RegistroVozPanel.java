@@ -96,6 +96,8 @@ public class RegistroVozPanel extends JPanel {
         add(btnPanel, BorderLayout.SOUTH);
 
         loadData();
+        
+        Theme.bindActionKeys(this, btnRefresh, null, null, null);
     }
 
     private void loadData() {

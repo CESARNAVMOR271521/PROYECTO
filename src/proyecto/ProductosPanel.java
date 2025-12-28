@@ -208,8 +208,10 @@ public class ProductosPanel extends JPanel {
                 btnVoice.setTargetComponent(c);
             }
         });
-
+        
         loadData();
+        
+        Theme.bindActionKeys(this, btnAdd, btnUpdate, btnDelete, btnClear);
     }
 
     private JPanel createGroupPanel(String title) {

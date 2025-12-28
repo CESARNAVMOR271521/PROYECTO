@@ -15,7 +15,6 @@ import java.util.Map;
 import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
-import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
@@ -24,6 +23,7 @@ import javax.swing.JPanel;
 import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
+import javax.swing.InputMap;
 
 import proyecto.util.Theme;
 import proyecto.vista.LoginFrame;
@@ -40,6 +40,8 @@ public class BarberiaChupirules {
 
     public static void main(String[] args) {
         try {
+            // Inicializar tema global ANTES de crear componentes
+            Theme.setupUI();
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception e) {
         }
@@ -55,8 +57,11 @@ public class BarberiaChupirules {
                 try {
                     BarberiaChupirules window = new BarberiaChupirules(loader);
                     EventQueue.invokeLater(() -> window.frame.setVisible(true));
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     e.printStackTrace();
+                    javax.swing.JOptionPane.showMessageDialog(null, 
+                        "Error fatal iniciando la aplicación:\n" + e.getMessage(), 
+                        "Error de Inicio", javax.swing.JOptionPane.ERROR_MESSAGE);
                 }
             };
 
@@ -79,14 +84,14 @@ public class BarberiaChupirules {
         if (loader != null) loader.updateProgress(10, "Configurando ventana principal...");
 
         frame = new JFrame("BARBERÍA CHUPIRULES - Management System");
-        frame.setBounds(100, 100, 1200, 800);
+        frame.setBounds(100, 100, 1280, 850); 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         try {
             frame.setIconImage(java.awt.Toolkit.getDefaultToolkit().getImage("src/img/logo.jpg"));
         } catch (Exception e) {
              System.err.println("Error loading icon: " + e.getMessage());
         }
-        frame.setLocationRelativeTo(null); // This might be slow if display config is complex, but usually fine
+        frame.setLocationRelativeTo(null); 
         frame.getContentPane().setLayout(new BorderLayout());
         frame.getContentPane().setBackground(Theme.COLOR_PRIMARY);
 
@@ -94,17 +99,18 @@ public class BarberiaChupirules {
 
         // 🎛 SIDEBAR
         sidebar = new JPanel(new BorderLayout());
-        sidebar.setPreferredSize(new Dimension(250, 0));
+        sidebar.setPreferredSize(new Dimension(260, 0));
         sidebar.setBackground(Theme.COLOR_SECONDARY);
-        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 2, Theme.COLOR_ACCENT_GOLD));
+        // Subtle border
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(0,0,0,30)));
 
         frame.add(sidebar, BorderLayout.WEST);
 
         // HEADER
         JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(Theme.COLOR_PRIMARY);
-        header.setPreferredSize(new Dimension(250, 100));
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Theme.COLOR_ACCENT_GOLD));
+        header.setBackground(Theme.COLOR_SECONDARY); 
+        header.setPreferredSize(new Dimension(260, 120));
+        header.setBorder(BorderFactory.createEmptyBorder(25, 20, 25, 20));
 
         JLabel lblTitle = new JLabel("CHUPIRULES");
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
@@ -113,25 +119,29 @@ public class BarberiaChupirules {
 
         JLabel lblSubtitle = new JLabel("BARBER SHOP");
         lblSubtitle.setHorizontalAlignment(SwingConstants.CENTER);
-        lblSubtitle.setForeground(Theme.COLOR_TEXT);
-        lblSubtitle.setFont(Theme.FONT_REGULAR);
+        lblSubtitle.setForeground(Theme.COLOR_TEXT_MUTED);
+        lblSubtitle.setFont(Theme.FONT_SUBTITLE);
 
         header.add(lblTitle, BorderLayout.CENTER);
         header.add(lblSubtitle, BorderLayout.SOUTH);
         sidebar.add(header, BorderLayout.NORTH);
 
         // MENÚ LATERAL
-        JPanel menuContainer = new JPanel(new GridLayout(0, 1, 0, 8));
+        JPanel menuContainer = new JPanel(new GridLayout(0, 1, 0, 5)); 
         menuContainer.setBackground(Theme.COLOR_SECONDARY);
-        menuContainer.setBorder(BorderFactory.createEmptyBorder(25, 10, 25, 10));
+        menuContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         sidebar.add(menuContainer, BorderLayout.CENTER);
 
         // PANEL CENTRAL
         contentPanel = new JPanel();
         cardLayout = new CardLayout();
         contentPanel.setLayout(cardLayout);
-        contentPanel.setBackground(Theme.COLOR_PRIMARY); // Fondo principal azul
+        contentPanel.setBackground(Theme.COLOR_PRIMARY); 
         frame.add(contentPanel, BorderLayout.CENTER);
+
+        if (loader != null) loader.updateProgress(25, "Cargando Dashboard...");
+        // 🏠 DASHBOARD (Inicio)
+        addModule(menuContainer, "Inicio", "INICIO", new DashboardPanel(), null);
 
         if (loader != null) loader.updateProgress(30, "Cargando módulo de Clientes...");
         // MÓDULOS (F1 -> F12)
@@ -155,31 +165,39 @@ public class BarberiaChupirules {
         if (loader != null) loader.updateProgress(60, "Cargando Productos...");
         addModule(menuContainer, "Productos (F7)", "PRODUCTOS", new ProductosPanel(), "F7");
 
+        if (loader != null) loader.updateProgress(65, "Cargando Proveedores...");
+        addModule(menuContainer, "Proveedores (F8)", "PROVEEDORES", new ProveedoresPanel(), "F8");
+
         if (loader != null) loader.updateProgress(70, "Cargando Usuarios y Pagos...");
         addModule(menuContainer, "Usuarios (F9)", "USUARIOS", new UsuariosPanel(), "F9");
         addModule(menuContainer, "Pagos (F10)", "PAGOS", new PagosPanel(), "F10");
 
+        if (loader != null) loader.updateProgress(75, "Cargando Compras...");
+        addModule(menuContainer, "Compras (F11)", "COMPRAS", new ComprasPanel(), "F11");
+
         if (loader != null) loader.updateProgress(80, "Cargando Facturación...");
         addModule(menuContainer, "Facturas (F12)", "FACTURAS", new FacturasPanel(), "F12");
         
-        addModule(menuContainer, "Proveedores", "PROVEEDORES", new ProveedoresPanel(), null);
-        addModule(menuContainer, "Compras", "COMPRAS", new ComprasPanel(), null);
-        addModule(menuContainer, "Voz (Logs)", "VOZ_LOGS", new RegistroVozPanel(), null);
+        addModule(menuContainer, "Voz (Shift+F12)", "VOZ_LOGS", new RegistroVozPanel(), "shift F12");
 
         // FOOTER SALIR
         JPanel footer = new JPanel();
         footer.setBackground(Theme.COLOR_SECONDARY);
+        footer.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
 
         JButton btnSalir = createMenuButton("SALIR");
-        btnSalir.setBackground(Theme.COLOR_ACCENT_RED.darker());
-        btnSalir.setForeground(Theme.COLOR_TEXT);
+        btnSalir.setBackground(Theme.COLOR_ACCENT_RED);
+        btnSalir.setForeground(Color.WHITE);
+        btnSalir.setBorder(new Theme.RoundedBorder(10, Theme.COLOR_ACCENT_RED));
+        // Need to override logic for custom painting on exit button or keep as menu button style
+        // Let's keep consistent but red
         btnSalir.addActionListener(e -> System.exit(0));
 
         footer.add(btnSalir);
         sidebar.add(footer, BorderLayout.SOUTH);
 
         // MÓDULO INICIAL
-        setModuleActive("CITAS");
+        setModuleActive("INICIO");
         
         if (loader != null) loader.updateProgress(90, "Iniciando Asistente IA...");
         
@@ -188,8 +206,13 @@ public class BarberiaChupirules {
             AsistenteIA asistente = new AsistenteIA(this);
             asistente.iniciarEscucha();
             System.out.println("Asistente IA iniciado y escuchando...");
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.err.println("Error al iniciar asistente IA: " + e.getMessage());
+            e.printStackTrace();
+            javax.swing.JOptionPane.showMessageDialog(frame, 
+                "No se pudo iniciar el Asistente de Voz (Librerías faltantes o error).\n" +
+                "La aplicación continuará sin funciones de voz.\n\n" + e.getMessage(),
+                "Advertencia de Voz", javax.swing.JOptionPane.WARNING_MESSAGE);
         }
         
         if (loader != null) loader.updateProgress(100, "¡Bienvenido!");
@@ -201,6 +224,10 @@ public class BarberiaChupirules {
         btn.setToolTipText("Abrir módulo de " + text.replace(" (", "").replace(")", ""));
 
         container.add(btn);
+        
+        // Force apply recursive theme
+        Theme.applyRecursive(panel);
+        
         contentPanel.add(panel, cardName);
         menuButtons.put(cardName, btn);
 
@@ -226,39 +253,45 @@ public class BarberiaChupirules {
         for (Map.Entry<String, JButton> entry : menuButtons.entrySet()) {
             if (entry.getKey().equals(cardName)) {
                 // Activo
-                entry.getValue().setBackground(Theme.COLOR_ACCENT_RED);
-                entry.getValue().setBorder(BorderFactory.createMatteBorder(2, 2, 2, 2, Theme.COLOR_ACCENT_GOLD));
+                JButton b = entry.getValue();
+                b.setBackground(Theme.COLOR_PRIMARY); // Merge with content
+                b.setForeground(Theme.COLOR_ACCENT_GOLD);
+                b.setBorder(BorderFactory.createMatteBorder(0, 4, 0, 0, Theme.COLOR_ACCENT_GOLD));
+                b.setFont(Theme.FONT_BOLD);
             } else {
                 // Inactivo
-                entry.getValue().setBackground(Theme.COLOR_SECONDARY);
-                entry.getValue().setBorder(BorderFactory.createEmptyBorder());
+                JButton b = entry.getValue();
+                b.setBackground(Theme.COLOR_SECONDARY);
+                b.setForeground(Theme.COLOR_TEXT);
+                b.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
+                b.setFont(Theme.FONT_REGULAR);
             }
         }
     }
 
     // ✨ BOTÓN DE MENÚ LATERAL
     private JButton createMenuButton(String text) {
-
         JButton btn = new JButton(text);
-        btn.setPreferredSize(new Dimension(200, 35));
+        btn.setPreferredSize(new Dimension(220, 40));
         btn.setForeground(Theme.COLOR_TEXT);
         btn.setBackground(Theme.COLOR_SECONDARY);
-        btn.setFont(Theme.FONT_BOLD);
+        btn.setFont(Theme.FONT_REGULAR);
         btn.setFocusPainted(false);
-        // Sin borde por defecto para limpiar
-        btn.setBorder(BorderFactory.createEmptyBorder());
-
+        btn.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
+        btn.setHorizontalAlignment(SwingConstants.LEFT);
+        btn.setIconTextGap(15);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
 
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                if (btn.getBackground() != Theme.COLOR_ACCENT_RED) {
-                    btn.setBackground(Theme.COLOR_PRIMARY); // Hover effect
+                // Hover effect
+                if (!btn.getForeground().equals(Theme.COLOR_ACCENT_GOLD)) { // If not active
+                     btn.setBackground(Theme.COLOR_SECONDARY.brighter());
                 }
             }
 
             public void mouseExited(java.awt.event.MouseEvent evt) {
-                if (btn.getBackground() != Theme.COLOR_ACCENT_RED) {
+                if (!btn.getForeground().equals(Theme.COLOR_ACCENT_GOLD)) {
                     btn.setBackground(Theme.COLOR_SECONDARY);
                 }
             }
@@ -267,4 +300,3 @@ public class BarberiaChupirules {
         return btn;
     }
 }
-

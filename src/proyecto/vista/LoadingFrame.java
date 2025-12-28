@@ -44,6 +44,8 @@ public class LoadingFrame extends JFrame {
         progressBar.setBackground(proyecto.util.Theme.COLOR_SECONDARY);
         progressBar.setForeground(proyecto.util.Theme.COLOR_ACCENT_GOLD);
         contentPane.add(progressBar);
+        
+        proyecto.util.Theme.applyRecursive(contentPane);
     }
 
     public void startLoading() {

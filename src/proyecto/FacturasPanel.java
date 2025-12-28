@@ -23,10 +23,16 @@ import javax.swing.RowFilter;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 
+import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
+import com.itextpdf.text.Element;
+import com.itextpdf.text.Font;
 import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
+import java.awt.Desktop;
+import java.io.File;
 
 import proyecto.dao.DetalleVentaDAO;
 import proyecto.dao.FacturaDAO;
@@ -139,7 +145,11 @@ public class FacturasPanel extends JPanel {
             }
         });
 
+
+        
         loadFacturas();
+        
+        Theme.bindActionKeys(this, btnRefresh, btnPrint, null, null);
     }
 
     private void loadFacturas() {
@@ -179,64 +189,142 @@ public class FacturasPanel extends JPanel {
             PdfWriter.getInstance(document, new FileOutputStream(filename));
             document.open();
 
-            // Logo
+            // Colors
+            BaseColor colorPrimary = new BaseColor(21, 40, 64);   // Navy
+            BaseColor colorGold = new BaseColor(212, 175, 55);    // Gold
+
+            // Fonts
+            Font fontTitle = new Font(Font.FontFamily.HELVETICA, 18, Font.BOLD, colorPrimary);
+            Font fontSubtitle = new Font(Font.FontFamily.HELVETICA, 12, Font.NORMAL, BaseColor.DARK_GRAY);
+            Font fontHeader = new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD, colorGold);
+            Font fontNormal = new Font(Font.FontFamily.HELVETICA, 10, Font.NORMAL, BaseColor.BLACK);
+
+            // --- HEADER (Table with 2 columns: Logo | Info) ---
+            PdfPTable headerTable = new PdfPTable(2);
+            headerTable.setWidthPercentage(100);
+            headerTable.setWidths(new float[]{1, 2}); // Logo takes 1 part, Text takes 2 parts
+
+            // Cell 1: Logo
+            PdfPCell cellLogo = new PdfPCell();
+            cellLogo.setBorder(PdfPCell.NO_BORDER);
             try {
                 com.itextpdf.text.Image logo = com.itextpdf.text.Image.getInstance("src/img/logo.jpg");
                 logo.scaleToFit(100, 100);
-                logo.setAlignment(com.itextpdf.text.Element.ALIGN_CENTER);
-                document.add(logo);
+                logo.setAlignment(Element.ALIGN_LEFT);
+                cellLogo.addElement(logo);
             } catch (Exception e) {
-                // Ignore if logo fails
+                cellLogo.addElement(new Paragraph("CHUPIRULES", fontTitle));
             }
+            headerTable.addCell(cellLogo);
 
-            // Header
-            com.itextpdf.text.Font titleFont = new com.itextpdf.text.Font(
-                    com.itextpdf.text.Font.FontFamily.HELVETICA, 18, com.itextpdf.text.Font.BOLD);
-            Paragraph title = new Paragraph("BARBERÍA CHUPIRULES - FACTURA", titleFont);
-            title.setAlignment(com.itextpdf.text.Element.ALIGN_CENTER);
-            document.add(title);
+            // Cell 2: Company Info
+            PdfPCell cellInfo = new PdfPCell();
+            cellInfo.setBorder(PdfPCell.NO_BORDER);
+            cellInfo.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            cellInfo.addElement(new Paragraph("BARBERÍA CHUPIRULES", fontTitle));
+            cellInfo.addElement(new Paragraph("Dirección: Calle Falsa 123, Ciudad", fontSubtitle));
+            cellInfo.addElement(new Paragraph("Tel: 555-123-4567", fontSubtitle));
+            cellInfo.addElement(new Paragraph("RFC: XAXX010101000", fontSubtitle));
+            headerTable.addCell(cellInfo);
+
+            document.add(headerTable);
             document.add(new Paragraph(" ")); // Spacer
+            
+            // --- INVOICE DETAILS ---
+            Paragraph pDetails = new Paragraph("Detalles de la Factura", new Font(Font.FontFamily.HELVETICA, 14, Font.BOLD, colorPrimary));
+            pDetails.setSpacingAfter(10);
+            document.add(pDetails);
 
-            // Info
-            document.add(new Paragraph("Factura #: " + idFactura));
-            document.add(new Paragraph("Fecha: " + fecha));
-            document.add(new Paragraph("Cliente: " + cliente));
+            PdfPTable infoTable = new PdfPTable(2);
+            infoTable.setWidthPercentage(100);
+            infoTable.getDefaultCell().setBorder(PdfPCell.NO_BORDER);
+            infoTable.addCell(new Paragraph("Folio: " + idFactura, fontNormal));
+            infoTable.addCell(new Paragraph("Fecha: " + fecha, fontNormal));
+            infoTable.addCell(new Paragraph("Cliente: " + cliente, fontNormal));
+            infoTable.addCell(new Paragraph(" ", fontNormal));
+            document.add(infoTable);
             document.add(new Paragraph(" "));
 
-            // Details Table
-            PdfPTable pdfTable = new PdfPTable(4); // Cant, Desc, Precio, Subtotal
-            pdfTable.addCell("Cant.");
-            pdfTable.addCell("Descripción");
-            pdfTable.addCell("Precio Unit.");
-            pdfTable.addCell("Subtotal");
+            // --- ITEMS TABLE ---
+            PdfPTable pdfTable = new PdfPTable(4);
+            pdfTable.setWidthPercentage(100);
+            pdfTable.setSpacingBefore(10f);
+            pdfTable.setSpacingAfter(10f);
+            pdfTable.setWidths(new float[]{1, 4, 2, 2}); // Relative widths
 
+            // Headers
+            String[] headers = {"Cant.", "Descripción", "Precio Unit.", "Subtotal"};
+            for (String h : headers) {
+                PdfPCell cell = new PdfPCell(new Paragraph(h, fontHeader));
+                cell.setBackgroundColor(colorPrimary);
+                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                cell.setPadding(8);
+                cell.setBorderColor(colorGold);
+                pdfTable.addCell(cell);
+            }
+
+            // Data
             List<DetalleVenta> detalles = detalleDAO.listarPorVenta(idVenta);
-
             for (DetalleVenta d : detalles) {
                 String itemName = getItemName(d.getTipoItem(), d.getIdItem());
 
-                pdfTable.addCell(String.valueOf(d.getCantidad()));
-                pdfTable.addCell(itemName);
-                pdfTable.addCell(String.format("$%.2f", d.getPrecioUnitario()));
-                pdfTable.addCell(String.format("$%.2f", d.getSubtotal()));
+                PdfPCell c1 = new PdfPCell(new Paragraph(String.valueOf(d.getCantidad()), fontNormal));
+                PdfPCell c2 = new PdfPCell(new Paragraph(itemName, fontNormal));
+                PdfPCell c3 = new PdfPCell(new Paragraph(String.format("$%.2f", d.getPrecioUnitario()), fontNormal));
+                PdfPCell c4 = new PdfPCell(new Paragraph(String.format("$%.2f", d.getSubtotal()), fontNormal));
+
+                c1.setHorizontalAlignment(Element.ALIGN_CENTER);
+                c3.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                c4.setHorizontalAlignment(Element.ALIGN_RIGHT);
+
+                // Padding
+                c1.setPadding(5); c2.setPadding(5); c3.setPadding(5); c4.setPadding(5);
+
+                pdfTable.addCell(c1);
+                pdfTable.addCell(c2);
+                pdfTable.addCell(c3);
+                pdfTable.addCell(c4);
             }
 
             document.add(pdfTable);
-            document.add(new Paragraph(" "));
 
-            // Total
-            Paragraph pTotal = new Paragraph("TOTAL: $" + String.format("%.2f", total));
-            pTotal.setAlignment(com.itextpdf.text.Element.ALIGN_RIGHT);
-            document.add(pTotal);
+            // --- TOTAL ---
+            PdfPTable totalTable = new PdfPTable(2);
+            totalTable.setWidthPercentage(40);
+            totalTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            
+            PdfPCell lblTotal = new PdfPCell(new Paragraph("TOTAL:", new Font(Font.FontFamily.HELVETICA, 12, Font.BOLD, colorPrimary)));
+            lblTotal.setBorder(PdfPCell.NO_BORDER);
+            lblTotal.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            
+            PdfPCell valTotal = new PdfPCell(new Paragraph("$" + String.format("%.2f", total), new Font(Font.FontFamily.HELVETICA, 14, Font.BOLD, BaseColor.RED)));
+            valTotal.setBorder(PdfPCell.BOTTOM);
+            valTotal.setBorderColor(colorGold);
+            valTotal.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            valTotal.setPaddingBottom(5);
+
+            totalTable.addCell(lblTotal);
+            totalTable.addCell(valTotal);
+            document.add(totalTable);
+
+            // --- FOOTER ---
+            document.add(new Paragraph(" "));
+            Paragraph footer = new Paragraph("¡Gracias por su preferencia!", new Font(Font.FontFamily.HELVETICA, 10, Font.ITALIC, BaseColor.GRAY));
+            footer.setAlignment(Element.ALIGN_CENTER);
+            document.add(footer);
 
             document.close();
-            JOptionPane.showMessageDialog(this, "Factura generada: " + filename);
-
-            // Try to open the file
+            
+            // Auto-open
             try {
-                java.awt.Desktop.getDesktop().open(new java.io.File(filename));
+                File file = new File(filename);
+                if (Desktop.isDesktopSupported()) {
+                    Desktop.getDesktop().open(file);
+                } else {
+                    JOptionPane.showMessageDialog(this, "PDF generado: " + file.getAbsolutePath() + "\n(El sistema no soporta apertura automática)");
+                }
             } catch (Exception ex) {
-                // Ignore if cannot open
+                JOptionPane.showMessageDialog(this, "PDF Generado pero error al abrir: " + ex.getMessage());
             }
 
         } catch (Exception e) {

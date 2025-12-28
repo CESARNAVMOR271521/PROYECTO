@@ -21,7 +21,7 @@ public class VoiceButton extends JButton {
     public VoiceButton() {
         super("🎤"); // Microphone emoji or text
         setBackground(DEFAULT_COLOR);
-        setForeground(Theme.COLOR_PRIMARY);
+        setForeground(Color.BLACK);
         setFocusable(false); 
 
         addActionListener(new ActionListener() {

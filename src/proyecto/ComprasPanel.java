@@ -163,6 +163,8 @@ public class ComprasPanel extends JPanel {
         });
 
         loadData();
+        
+        Theme.bindActionKeys(this, btnAdd, btnProcess, btnClear, null);
     }
 
     private void addLabel(JPanel panel, String text) {

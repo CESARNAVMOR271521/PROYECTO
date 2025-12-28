@@ -7,8 +7,6 @@ import proyecto.modelo.UsuarioSistema;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.function.Consumer;
 
 public class LoginFrame extends JFrame {
@@ -19,14 +17,6 @@ public class LoginFrame extends JFrame {
     private UsuarioSistemaDAO usuarioDAO;
     private Consumer<LoadingFrame> onSuccess;
 
-    // Colores del tema (Godhome Style)
-    private final Color BG_MARBLE = new Color(233, 227, 200);
-    private final Color BG_GOLD_DARK = new Color(140, 112, 60);
-    private final Color BTN_DEFAULT = new Color(199, 179, 106);
-    private final Color BTN_HOVER = new Color(228, 204, 130);
-    private final Color TXT_MAIN = new Color(60, 45, 20);
-
-    private JProgressBar progressBar;
     private JButton btnEntrar;
     private JButton btnRegistrar;
 
@@ -36,7 +26,7 @@ public class LoginFrame extends JFrame {
 
         setTitle("Login - Barbería Chupirules");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setBounds(100, 100, 450, 450); // Increased height for progress bar
+        setBounds(100, 100, 480, 500); // Slightly larger
         setLocationRelativeTo(null);
         setResizable(false);
         try {
@@ -46,16 +36,17 @@ public class LoginFrame extends JFrame {
         }
 
         contentPane = new JPanel();
-        contentPane.setBackground(proyecto.util.Theme.COLOR_PRIMARY); // Navy Background
+        contentPane.setBackground(proyecto.util.Theme.COLOR_PRIMARY); 
         contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
         setContentPane(contentPane);
         contentPane.setLayout(null);
 
         // Header
         JPanel panelHeader = new JPanel();
-        panelHeader.setBounds(0, 0, 434, 60);
+        panelHeader.setBounds(0, 0, 480, 70);
         panelHeader.setBackground(proyecto.util.Theme.COLOR_SECONDARY);
-        panelHeader.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, proyecto.util.Theme.COLOR_ACCENT_GOLD));
+        // Header border
+        panelHeader.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, proyecto.util.Theme.COLOR_ACCENT_GOLD));
         contentPane.add(panelHeader);
         panelHeader.setLayout(new BorderLayout(0, 0));
 
@@ -69,11 +60,11 @@ public class LoginFrame extends JFrame {
         JLabel lblUsuario = new JLabel("Usuario:");
         lblUsuario.setFont(proyecto.util.Theme.FONT_BOLD);
         lblUsuario.setForeground(proyecto.util.Theme.COLOR_TEXT);
-        lblUsuario.setBounds(50, 100, 100, 20);
+        lblUsuario.setBounds(60, 110, 100, 20);
         contentPane.add(lblUsuario);
 
         txtUsuario = new JTextField();
-        txtUsuario.setBounds(50, 125, 330, 30);
+        txtUsuario.setBounds(60, 135, 340, 35); // Taller input
         txtUsuario.setFont(proyecto.util.Theme.FONT_REGULAR);
         contentPane.add(txtUsuario);
         txtUsuario.setColumns(10);
@@ -81,17 +72,17 @@ public class LoginFrame extends JFrame {
         JLabel lblPassword = new JLabel("Contraseña:");
         lblPassword.setFont(proyecto.util.Theme.FONT_BOLD);
         lblPassword.setForeground(proyecto.util.Theme.COLOR_TEXT);
-        lblPassword.setBounds(50, 170, 100, 20);
+        lblPassword.setBounds(60, 190, 100, 20);
         contentPane.add(lblPassword);
 
         txtPassword = new JPasswordField();
-        txtPassword.setBounds(50, 195, 330, 30);
+        txtPassword.setBounds(60, 215, 340, 35);
         txtPassword.setFont(proyecto.util.Theme.FONT_REGULAR);
         contentPane.add(txtPassword);
 
         // Botón Entrar
         btnEntrar = proyecto.util.Theme.createStyledButton("ENTRAR");
-        btnEntrar.setBounds(50, 260, 150, 40);
+        btnEntrar.setBounds(60, 290, 340, 45); // Full width button looks better
         btnEntrar.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 autenticar();
@@ -99,9 +90,9 @@ public class LoginFrame extends JFrame {
         });
         contentPane.add(btnEntrar);
 
-        // Botón Registrarse
-        btnRegistrar = proyecto.util.Theme.createStyledButton("REGISTRARSE");
-        btnRegistrar.setBounds(230, 260, 150, 40);
+        // Botón Registrarse (Secondary style)
+        btnRegistrar = proyecto.util.Theme.createSecondaryButton("REGISTRARSE");
+        btnRegistrar.setBounds(60, 350, 340, 45); 
         btnRegistrar.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -109,6 +100,9 @@ public class LoginFrame extends JFrame {
             }
         });
         contentPane.add(btnRegistrar);
+        
+        // Final polish: apply theme recursive to ensure text fields get rounded borders
+        proyecto.util.Theme.applyRecursive(contentPane);
     }
 
     private void autenticar() {

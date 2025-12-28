@@ -150,6 +150,8 @@ public class UsuariosPanel extends JPanel {
                 btnVoice.setTargetComponent(c);
             }
         });
+        
+        Theme.bindActionKeys(this, btnAdd, btnUpdate, btnDelete, btnClear);
     }
 
     private void addLabel(JPanel panel, String text) {

@@ -148,6 +148,9 @@ public class ServiciosPanel extends JPanel {
                 btnVoice.setTargetComponent(c);
             }
         });
+        
+        // ⌨️ ACCESOS RÁPIDOS
+        Theme.bindActionKeys(this, btnAdd, btnUpdate, btnDelete, btnClear);
     }
 
     private void addLabel(JPanel panel, String text) {

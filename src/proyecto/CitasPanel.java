@@ -152,6 +152,8 @@ public class CitasPanel extends JPanel {
 
         loadComboBoxes();
         loadData();
+        
+        Theme.bindActionKeys(this, btnAdd, btnDelete, btnRefresh, null);
     }
 
     private void addLabel(JPanel panel, String text) {
