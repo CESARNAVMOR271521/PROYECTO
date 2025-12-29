@@ -37,6 +37,9 @@ public class BarberiaChupirules {
 
     // Mapa para gestionar los botones activos
     private Map<String, JButton> menuButtons = new HashMap<>();
+    // Registry for panels
+    private Map<String, JPanel> loadedPanels = new HashMap<>();
+    private String currentModule = "INICIO";
 
     public static void main(String[] args) {
         try {
@@ -85,6 +88,7 @@ public class BarberiaChupirules {
 
         frame = new JFrame("BARBERÍA CHUPIRULES - Management System");
         frame.setBounds(100, 100, 1280, 850); 
+        frame.setExtendedState(JFrame.MAXIMIZED_BOTH); 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         try {
             frame.setIconImage(java.awt.Toolkit.getDefaultToolkit().getImage("src/img/logo.jpg"));
@@ -230,6 +234,7 @@ public class BarberiaChupirules {
         
         contentPanel.add(panel, cardName);
         menuButtons.put(cardName, btn);
+        loadedPanels.put(cardName, panel);
 
         // ⌨️ BINDING DE TECLADO
         if (keyStroke != null) {
@@ -248,6 +253,7 @@ public class BarberiaChupirules {
 
     public void setModuleActive(String cardName) {
         cardLayout.show(contentPanel, cardName);
+        this.currentModule = cardName;
 
         // Actualizar visualmente los botones
         for (Map.Entry<String, JButton> entry : menuButtons.entrySet()) {
@@ -298,5 +304,27 @@ public class BarberiaChupirules {
         });
 
         return btn;
+    }
+    public void dispatchVoiceCommand(String module, String command, String args) {
+        String targetModule = (module == null || module.equals("NULL")) ? currentModule : module;
+        
+        // If module is specified and different, switch to it first
+        if (module != null && !module.equals("NULL") && !module.equals(currentModule)) {
+            setModuleActive(targetModule);
+        }
+
+        JPanel panel = loadedPanels.get(targetModule);
+        if (panel == null) {
+            System.err.println("Panel no encontrado para modulo: " + targetModule);
+            return;
+        }
+
+        if (panel instanceof VoiceAware) {
+            ((VoiceAware) panel).handleVoiceCommand(command.toUpperCase(), args);
+        } else {
+            System.out.println("Panel " + targetModule + " no soporta comandos de voz (VoiceAware).");
+            // Optional: Feedback to user
+            // proyecto.TextToSpeech.speak("Este modulo no soporta comandos de voz.");
+        }
     }
 }

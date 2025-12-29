@@ -26,33 +26,37 @@ public class ReconocimientoVoz {
         LibVosk.setLogLevel(LogLevel.WARNINGS);
 
         try {
-            // Cargar el modelo
+            // Cargar el modelo - Priorizamos la ruta que sabemos que existe
             String[] possiblePaths = {
                 "models/vosk-model-small-es-0.42",
                 "vosk-model-small-es-0.42",
-                "../vosk-model-small-es-0.42",
-                "src/vosk-model-small-es-0.42"
+                "../models/vosk-model-small-es-0.42",
+                "src/models/vosk-model-small-es-0.42"
             };
             
             String modelPath = null;
             for (String path : possiblePaths) {
-                if (new java.io.File(path).exists()) {
+                java.io.File f = new java.io.File(path);
+                if (f.exists() && f.isDirectory()) {
                     modelPath = path;
                     break;
                 }
             }
 
             if (modelPath == null) {
-                throw new java.io.IOException("No se encontró la carpeta del modelo 'vosk-model-small-es-0.42' en el directorio: " + new java.io.File(".").getAbsolutePath());
+                // Fallback attempt: list directories in current path to debug
+                System.err.println("No se encontró el modelo Vosk. Ruta actual: " + new java.io.File(".").getAbsolutePath());
+                throw new java.io.IOException("No se encontró la carpeta del modelo 'vosk-model-small-es-0.42' en 'models/' ni en la raiz.");
             }
 
             System.out.println("Cargando modelo de voz desde: " + new java.io.File(modelPath).getAbsolutePath());
             model = new Model(modelPath);
-            System.out.println("Modelo cargado correctamente.");
+            System.out.println("Modelo de voz cargado correctamente.");
         } catch (IOException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null,
-                    "Error al cargar el modelo de voz (vosk-model-small-es-0.42): " + e.getMessage());
+                    "Error crítico al cargar el modelo de voz:\n" + e.getMessage() + "\n\nLa función de voz no estará disponible.",
+                    "Error de Voz", JOptionPane.ERROR_MESSAGE);
         }
     }
 

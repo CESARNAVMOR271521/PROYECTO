@@ -24,6 +24,7 @@ import javax.swing.UIManager;
 import javax.swing.border.AbstractBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.JTableHeader;
+import proyecto.util.ModernIcon.IconType;
 
 /**
  * Utility class for the "Barber Chupirul" Design System.
@@ -190,6 +191,15 @@ public class Theme {
     }
     
     // New secondary button (grey/blue)
+    public static JButton createStyledButton(String text, IconType iconType) {
+        JButton btn = createStyledButton(text);
+        if (iconType != null) {
+            btn.setIcon(new ModernIcon(iconType));
+            btn.setIconTextGap(8);
+        }
+        return btn;
+    }
+
     public static JButton createSecondaryButton(String text) {
         JButton btn = createStyledButton(text);
         btn.setBackground(COLOR_SECONDARY.brighter());

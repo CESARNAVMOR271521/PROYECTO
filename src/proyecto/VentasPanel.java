@@ -17,6 +17,7 @@ import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 import proyecto.vista.TicketWindow;
 import proyecto.util.Theme;
+import proyecto.util.ModernIcon.IconType;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -31,7 +32,7 @@ import javax.swing.SwingConstants;
 import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 
-public class VentasPanel extends JPanel {
+public class VentasPanel extends JPanel implements VoiceAware {
 
     private JTable cartTable;
     private DefaultTableModel cartModel;
@@ -74,7 +75,7 @@ public class VentasPanel extends JPanel {
         cbItem = new JComboBox<>();
         txtCantidad = new JTextField("1");
         
-        JButton btnAdd = Theme.createStyledButton("Agregar al Carrito");
+        JButton btnAdd = Theme.createStyledButton("Agregar al Carrito", IconType.ADD);
 
         addLabel(selectionPanel, "Cliente:");
         selectionPanel.add(cbCliente);
@@ -110,8 +111,8 @@ public class VentasPanel extends JPanel {
         txtTotal.setEditable(false);
         txtTotal.setText("0.00");
 
-        JButton btnProcess = Theme.createStyledButton("Procesar Venta");
-        JButton btnClear = Theme.createStyledButton("Cancelar");
+        JButton btnProcess = Theme.createStyledButton("Procesar Venta", IconType.SAVE);
+        JButton btnClear = Theme.createStyledButton("Cancelar", IconType.CANCEL);
 
         JPanel topContainer = new JPanel(new BorderLayout());
         topContainer.add(selectionPanel, BorderLayout.CENTER);
@@ -218,6 +219,7 @@ public class VentasPanel extends JPanel {
                 cbItem.addItem(rs.getString("nombre") + " ($" + rs.getDouble("precio") + ")");
                 itemPrices.add(rs.getDouble("precio"));
             }
+            System.out.println("VentasPanel: Loaded " + itemIds.size() + " items for type " + type);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -273,10 +275,12 @@ public class VentasPanel extends JPanel {
         }
 
         int clienteIdx = cbCliente.getSelectedIndex();
-        int idCliente = clienteIdx > 0 ? clienteIds.get(clienteIdx) : 0; // 0 for NULL/Anon if logic allows, or handle
-                                                                         // strictly
+        int idCliente = clienteIdx > 0 ? clienteIds.get(clienteIdx) : 0; 
         Double total = Double.parseDouble(txtTotal.getText());
         String fecha = LocalDate.now().toString();
+
+        double montoRecibido = total;
+        double cambio = 0.0;
 
         // New Logic for Cash Payment Amount
         if (rbEfectivo.isSelected()) {
@@ -287,14 +291,14 @@ public class VentasPanel extends JPanel {
             }
             
             try {
-                double montoRecibido = Double.parseDouble(input);
+                montoRecibido = Double.parseDouble(input);
                 
                 if (montoRecibido < total) {
                     JOptionPane.showMessageDialog(this, "Monto insuficiente. Faltan: $" + String.format("%.2f", total - montoRecibido), "Error de Pago", JOptionPane.ERROR_MESSAGE);
                     return;
                 }
                 
-                double cambio = montoRecibido - total;
+                cambio = montoRecibido - total;
                 JOptionPane.showMessageDialog(this, "Venta Exitosa.\nSu cambio: $" + String.format("%.2f", cambio), "Pago Completado", JOptionPane.INFORMATION_MESSAGE);
                 
             } catch (NumberFormatException ex) {
@@ -384,13 +388,17 @@ public class VentasPanel extends JPanel {
                 conn.commit();
 
                 // Show Ticket
+                final double finalMontoRecibido = montoRecibido;
+                final double finalCambio = cambio;
                 SwingUtilities.invokeLater(() -> {
                     new TicketWindow(
                             SwingUtilities.getWindowAncestor(this),
                             (String) cbCliente.getSelectedItem(),
                             cartModel,
                             total,
-                            metodo).setVisible(true);
+                            metodo, 
+                            finalMontoRecibido, 
+                            finalCambio).setVisible(true);
                 });
 
                 // JOptionPane.showMessageDialog(this, "Venta realizada con éxito");
@@ -406,6 +414,68 @@ public class VentasPanel extends JPanel {
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error en la venta: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+    @Override
+    public void handleVoiceCommand(String command, String args) {
+        System.out.println("VentasPanel Handling: " + command + " [" + args + "]");
+        
+        switch (command) {
+            case "AGREGA":
+                if (args == null || args.isEmpty()) return;
+                // Fuzzy search in Dropdown
+                String search = args.toLowerCase();
+                int bestMatch = -1;
+                
+                for (int i = 0; i < cbItem.getItemCount(); i++) {
+                    String itemText = cbItem.getItemAt(i).toLowerCase();
+                    if (itemText.contains(search)) {
+                        bestMatch = i;
+                        break; // Pick first containment match
+                    }
+                }
+                
+                if (bestMatch != -1) {
+                    cbItem.setSelectedIndex(bestMatch);
+                    // Optional: Speak confirmation? 
+                    // Main app handles speech usually, but here we can just do the action.
+                    addItemToCart();
+                } else {
+                    System.out.println("Item no encontrado: " + args);
+                }
+                break;
+                
+            case "AUMENTA":
+                try {
+                    int delta = 1;
+                    if (args != null && !args.isEmpty()) {
+                        delta = Integer.parseInt(args.replaceAll("[^0-9]", ""));
+                    }
+                    // If text field has focus, maybe just set it? 
+                    // Default behavior: Set Quantity Field
+                    int current = 1;
+                    try { current = Integer.parseInt(txtCantidad.getText()); } catch(Exception e){}
+                    
+                    // Interpret input as "Start with X" or "Add X"? 
+                    // Let's assume user says "Aumenta 3" implies "Set quantity to 3" or "Add 3"?
+                    // Actually prompt says "Aumenta", implies increase. 
+                    // But if user says "Aumenta 5", normally they mean "I want 5 of these".
+                    // Let's set it to the number provided if > 0, else increment.
+                    
+                    if (delta > 0 && args.matches(".*\\d.*")) {
+                         txtCantidad.setText(String.valueOf(delta));
+                    } else {
+                         txtCantidad.setText(String.valueOf(current + 1));
+                    }
+                    
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                break;
+                
+            case "REGISTRA":
+                processSale();
+                break;
         }
     }
 }

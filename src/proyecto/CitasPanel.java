@@ -27,8 +27,9 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 
 import proyecto.util.Theme;
+import proyecto.util.ModernIcon.IconType;
 
-public class CitasPanel extends JPanel {
+public class CitasPanel extends JPanel implements VoiceAware {
 
     private JTable table;
     private DefaultTableModel tableModel;
@@ -71,8 +72,11 @@ public class CitasPanel extends JPanel {
         cbCliente = new JComboBox<>();
         cbBarbero = new JComboBox<>();
         cbServicio = new JComboBox<>();
-        txtFecha = new JTextField("2025-01-01"); // Placeholder
-        txtHora = new JTextField("10:00");
+        java.time.format.DateTimeFormatter dateFormatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        java.time.format.DateTimeFormatter timeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+        
+        txtFecha = new JTextField(java.time.LocalDate.now().format(dateFormatter));
+        txtHora = new JTextField(java.time.LocalTime.now().format(timeFormatter));
 
         addLabel(formPanel, "Cliente:");
         formPanel.add(cbCliente);
@@ -120,9 +124,9 @@ public class CitasPanel extends JPanel {
         JPanel btnPanel = new JPanel(new FlowLayout());
         btnPanel.setBackground(Theme.COLOR_PRIMARY);
 
-        JButton btnAdd = Theme.createStyledButton("Agendar Cita");
-        JButton btnDelete = Theme.createStyledButton("Cancelar Cita");
-        JButton btnRefresh = Theme.createStyledButton("Refrescar");
+        JButton btnAdd = Theme.createStyledButton("Agendar Cita", IconType.ADD);
+        JButton btnDelete = Theme.createStyledButton("Cancelar Cita", IconType.CANCEL);
+        JButton btnRefresh = Theme.createStyledButton("Refrescar", IconType.REFRESH);
 
         VoiceButton btnVoice = new VoiceButton();
         btnVoice.setBackground(Theme.COLOR_ACCENT_GOLD);
@@ -276,6 +280,35 @@ public class CitasPanel extends JPanel {
             } catch (SQLException e) {
                 JOptionPane.showMessageDialog(this, "Error al cancelar: " + e.getMessage());
             }
+        }
+    }
+    @Override
+    public void handleVoiceCommand(String command, String args) {
+        switch (command) {
+            case "AGENDAR":
+            case "CREATE":
+                // Args could be "Juan Perez tomorrow at 5"
+                // This is complex parsing. For now, we assume AI sent standardized JSON args or we just trigger the button.
+                // Better approach: AI prompt should extract "CLIENT:Juan", "TIME:17:00"
+                // For MVP: Just open dialog or try to match client from args
+                if (args != null && !args.isEmpty()) {
+                    // Try to finding client name in args
+                    for (int i=0; i<cbCliente.getItemCount(); i++) {
+                       if (args.toLowerCase().contains(cbCliente.getItemAt(i).toLowerCase())) {
+                           cbCliente.setSelectedIndex(i);
+                           break;
+                       }
+                    }
+                }
+                addCita();
+                break;
+            case "DELETE":
+            case "CANCEL":
+                deleteCita();
+                break;
+            case "CLEAR":
+                // clear fields
+                break;
         }
     }
 }

@@ -10,7 +10,7 @@ import java.util.List;
 
 public class TicketWindow extends JDialog {
 
-    public TicketWindow(Window owner, String clientName, DefaultTableModel cartModel, double total, String paymentMethod) {
+    public TicketWindow(Window owner, String clientName, DefaultTableModel cartModel, double total, String paymentMethod, double amountPaid, double change) {
         super(owner, "Ticket de Venta", ModalityType.APPLICATION_MODAL);
         setSize(350, 600);
         setLocationRelativeTo(owner);
@@ -92,8 +92,33 @@ public class TicketWindow extends JDialog {
         
         totalPanel.add(lblTotalText, BorderLayout.WEST);
         totalPanel.add(lblTotalVal, BorderLayout.EAST);
+        totalPanel.add(lblTotalVal, BorderLayout.EAST);
         totalPanel.setMaximumSize(new Dimension(350, 30));
         contentPanel.add(totalPanel);
+        
+        // --- PAYMENT DETAILS ---
+        JPanel paymentPanel = new JPanel(new GridLayout(2, 2));
+        paymentPanel.setBackground(Color.WHITE);
+        
+        JLabel lblPaidText = new JLabel("Su Pago:");
+        lblPaidText.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JLabel lblPaidVal = new JLabel("$" + String.format("%.2f", amountPaid));
+        lblPaidVal.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        lblPaidVal.setHorizontalAlignment(SwingConstants.RIGHT);
+        
+        JLabel lblChangeText = new JLabel("Su Cambio:");
+        lblChangeText.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        JLabel lblChangeVal = new JLabel("$" + String.format("%.2f", change));
+        lblChangeVal.setFont(new Font("Monospaced", Font.PLAIN, 12));
+        lblChangeVal.setHorizontalAlignment(SwingConstants.RIGHT);
+        
+        paymentPanel.add(lblPaidText);
+        paymentPanel.add(lblPaidVal);
+        paymentPanel.add(lblChangeText);
+        paymentPanel.add(lblChangeVal);
+        
+        paymentPanel.setMaximumSize(new Dimension(350, 40));
+        contentPanel.add(paymentPanel);
         
         addSeparator(contentPanel);
         contentPanel.add(Box.createVerticalStrut(10));

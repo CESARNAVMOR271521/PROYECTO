@@ -28,8 +28,9 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 
 import proyecto.util.Theme;
+import proyecto.util.ModernIcon.IconType;
 
-public class ClientesPanel extends JPanel {
+public class ClientesPanel extends JPanel implements VoiceAware {
 
     private JTable table;
     private DefaultTableModel tableModel;
@@ -128,10 +129,10 @@ public class ClientesPanel extends JPanel {
         JPanel btnPanel = new JPanel(new FlowLayout());
         btnPanel.setBackground(Theme.COLOR_PRIMARY);
 
-        JButton btnAdd = Theme.createStyledButton("Agregar");
-        JButton btnUpdate = Theme.createStyledButton("Actualizar");
-        JButton btnDelete = Theme.createStyledButton("Eliminar");
-        JButton btnClear = Theme.createStyledButton("Limpiar");
+        JButton btnAdd = Theme.createStyledButton("Agregar", IconType.ADD);
+        JButton btnUpdate = Theme.createStyledButton("Actualizar", IconType.EDIT);
+        JButton btnDelete = Theme.createStyledButton("Eliminar", IconType.DELETE);
+        JButton btnClear = Theme.createStyledButton("Limpiar", IconType.CLEAR);
 
         VoiceButton btnVoice = new VoiceButton(); // New Voice Button
         btnVoice.setBackground(Theme.COLOR_ACCENT_GOLD);
@@ -275,5 +276,65 @@ public class ClientesPanel extends JPanel {
         txtCorreo.setText("");
         txtHistorial.setText("");
         table.clearSelection();
+    }
+    @Override
+    public void handleVoiceCommand(String command, String args) {
+        switch (command) {
+            case "CLEAR":
+                clearForm();
+                break;
+            case "CREATE":
+                // AI might return "Juan Perez" in args
+                if (args != null && !args.isEmpty()) {
+                    txtNombre.setText(args);
+                }
+                addCliente();
+                break;
+            case "UPDATE":
+                updateCliente();
+                break;
+            case "DELETE":
+                deleteCliente();
+                break;
+            case "SEARCH":
+                txtBuscar.setText(args);
+                break;
+            case "SELECT":
+                // Args = query
+                if (args == null || args.isEmpty()) return;
+                String query = args.toLowerCase();
+                for (int i = 0; i < table.getRowCount(); i++) {
+                    // Column 1 is Nombre
+                    String name = table.getValueAt(i, 1).toString().toLowerCase();
+                    if (name.contains(query)) {
+                        table.setRowSelectionInterval(i, i);
+                        // Scroll to selection
+                        table.scrollRectToVisible(table.getCellRect(i, 0, true));
+                        // Force clean selection load
+                        txtNombre.setText(table.getValueAt(i, 1).toString());
+                        txtTelefono.setText(table.getValueAt(i, 2) != null ? table.getValueAt(i, 2).toString() : "");
+                        txtCorreo.setText(table.getValueAt(i, 3) != null ? table.getValueAt(i, 3).toString() : "");
+                        txtHistorial.setText(table.getValueAt(i, 4) != null ? table.getValueAt(i, 4).toString() : "");
+                        break;
+                    }
+                }
+                break;
+            case "SET_FIELD":
+                // Args = "FIELD VALUE"
+                String[] parts = args.split(" ", 2);
+                if (parts.length < 2) return;
+                String field = parts[0].toUpperCase();
+                String val = parts[1];
+                
+                switch (field) {
+                    case "NOMBRE": txtNombre.setText(val); break;
+                    case "TELEFONO": txtTelefono.setText(val); break;
+                    case "CORREO": txtCorreo.setText(val); break;
+                    case "HISTORIAL": case "NOTAS": txtHistorial.setText(val); break;
+                }
+                break;
+            default:
+                System.out.println("Comando no soportado en Clientes: " + command);
+        }
     }
 }

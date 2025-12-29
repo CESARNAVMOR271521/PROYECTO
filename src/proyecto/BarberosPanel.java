@@ -26,6 +26,7 @@ import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
 
 import proyecto.util.Theme;
+import proyecto.util.ModernIcon.IconType;
 
 public class BarberosPanel extends JPanel {
 
@@ -118,10 +119,10 @@ public class BarberosPanel extends JPanel {
         JPanel btnPanel = new JPanel(new FlowLayout());
         btnPanel.setBackground(Theme.COLOR_PRIMARY);
 
-        JButton btnAdd = Theme.createStyledButton("Agregar");
-        JButton btnUpdate = Theme.createStyledButton("Actualizar");
-        JButton btnDelete = Theme.createStyledButton("Eliminar");
-        JButton btnClear = Theme.createStyledButton("Limpiar");
+        JButton btnAdd = Theme.createStyledButton("Agregar", IconType.ADD);
+        JButton btnUpdate = Theme.createStyledButton("Actualizar", IconType.EDIT);
+        JButton btnDelete = Theme.createStyledButton("Eliminar", IconType.DELETE);
+        JButton btnClear = Theme.createStyledButton("Limpiar", IconType.CLEAR);
 
         VoiceButton btnVoice = new VoiceButton();
         // Style voice button manually as it is custom

@@ -38,6 +38,7 @@ import proyecto.dao.DetalleVentaDAO;
 import proyecto.dao.FacturaDAO;
 import proyecto.modelo.DetalleVenta;
 import proyecto.util.Theme;
+import proyecto.util.ModernIcon.IconType;
 
 public class FacturasPanel extends JPanel {
 
@@ -122,10 +123,10 @@ public class FacturasPanel extends JPanel {
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         btnPanel.setBackground(Theme.COLOR_PRIMARY);
 
-        JButton btnPrint = Theme.createStyledButton("Imprimir PDF");
+        JButton btnPrint = Theme.createStyledButton("Imprimir PDF", IconType.PRINT);
         btnPrint.addActionListener(e -> printSelectedFactura());
 
-        JButton btnRefresh = Theme.createStyledButton("Actualizar");
+        JButton btnRefresh = Theme.createStyledButton("Actualizar", IconType.REFRESH);
         btnRefresh.addActionListener(e -> loadFacturas());
 
         VoiceButton btnVoice = new VoiceButton();

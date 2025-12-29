@@ -11,6 +11,7 @@ import java.sql.Statement;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -22,13 +23,15 @@ import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 
 import proyecto.util.Theme;
+import proyecto.util.ModernIcon.IconType;
 
-public class ProductosPanel extends JPanel {
+public class ProductosPanel extends JPanel implements VoiceAware {
 
     private JTable table;
     private DefaultTableModel tableModel;
     private JTextField txtNombre, txtDescripcion, txtPrecioVenta, txtPrecioCompra;
     private JTextField txtStock, txtMinimo;
+    private JComboBox<String> cbCategoria;
 
     public ProductosPanel() {
         setLayout(new BorderLayout(10, 10));
@@ -117,6 +120,10 @@ public class ProductosPanel extends JPanel {
         groupProducto.add(txtNombre);
         addLabel(groupProducto, "Descripción:");
         groupProducto.add(txtDescripcion);
+        
+        cbCategoria = new JComboBox<>(new String[]{"Cabello", "Barba", "Afeitado", "Herramientas", "Otros"});
+        addLabel(groupProducto, "Categoría:");
+        groupProducto.add(cbCategoria);
 
         // Group 2: Pricing
         JPanel groupPrecios = createGroupPanel("Precios");
@@ -144,7 +151,7 @@ public class ProductosPanel extends JPanel {
         formContainer.add(groupPrecios);
         formContainer.add(groupInventario);
 
-        String[] columnNames = { "ID", "Nombre", "Descripción", "P. Venta", "P. Compra", "Stock", "Mínimo" };
+        String[] columnNames = { "ID", "Nombre", "Descripción", "Cat.", "P. Venta", "P. Compra", "Stock", "Mínimo" };
         tableModel = new DefaultTableModel(columnNames, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -170,10 +177,10 @@ public class ProductosPanel extends JPanel {
         JPanel btnPanel = new JPanel(new FlowLayout());
         btnPanel.setBackground(Theme.COLOR_PRIMARY);
 
-        JButton btnAdd = Theme.createStyledButton("Agregar");
-        JButton btnUpdate = Theme.createStyledButton("Actualizar");
-        JButton btnDelete = Theme.createStyledButton("Eliminar");
-        JButton btnClear = Theme.createStyledButton("Limpiar");
+        JButton btnAdd = Theme.createStyledButton("Agregar", IconType.ADD);
+        JButton btnUpdate = Theme.createStyledButton("Actualizar", IconType.EDIT);
+        JButton btnDelete = Theme.createStyledButton("Eliminar", IconType.DELETE);
+        JButton btnClear = Theme.createStyledButton("Limpiar", IconType.CLEAR);
 
         VoiceButton btnVoice = new VoiceButton();
         btnVoice.setBackground(Theme.COLOR_ACCENT_GOLD);
@@ -215,7 +222,7 @@ public class ProductosPanel extends JPanel {
     }
 
     private JPanel createGroupPanel(String title) {
-        JPanel panel = new JPanel(new GridLayout(4, 1, 5, 5));
+        JPanel panel = new JPanel(new GridLayout(5, 1, 5, 5));
         TitledBorder border = BorderFactory.createTitledBorder(
             BorderFactory.createLineBorder(Theme.COLOR_ACCENT_GOLD), title);
         border.setTitleColor(Theme.COLOR_ACCENT_GOLD);
@@ -234,7 +241,7 @@ public class ProductosPanel extends JPanel {
 
     private void loadData() {
         tableModel.setRowCount(0);
-        String sql = "SELECT p.id_producto, p.nombre, p.descripcion, p.precio_venta, p.precio_compra, " +
+        String sql = "SELECT p.id_producto, p.nombre, p.descripcion, p.categoria, p.precio_venta, p.precio_compra, " +
                 "COALESCE(i.cantidad_actual, 0) as stock, COALESCE(i.minimo, 0) as minimo " +
                 "FROM Producto p " +
                 "LEFT JOIN Inventario i ON p.id_producto = i.id_producto";
@@ -248,6 +255,7 @@ public class ProductosPanel extends JPanel {
                         rs.getInt("id_producto"),
                         rs.getString("nombre"),
                         rs.getString("descripcion"),
+                        rs.getString("categoria"),
                         rs.getDouble("precio_venta"),
                         rs.getDouble("precio_compra"),
                         rs.getInt("stock"),
@@ -266,7 +274,7 @@ public class ProductosPanel extends JPanel {
             int stock = Integer.parseInt(txtStock.getText());
             int minimo = Integer.parseInt(txtMinimo.getText());
 
-            String sqlProd = "INSERT INTO Producto(nombre, descripcion, precio_venta, precio_compra) VALUES(?,?,?,?)";
+            String sqlProd = "INSERT INTO Producto(nombre, descripcion, categoria, precio_venta, precio_compra) VALUES(?,?,?,?,?)";
             String sqlInv = "INSERT INTO Inventario(id_producto, cantidad_actual, minimo) VALUES(?,?,?)";
 
             try (Connection conn = DatabaseHelper.connect()) {
@@ -276,8 +284,9 @@ public class ProductosPanel extends JPanel {
                 try (PreparedStatement pstProd = conn.prepareStatement(sqlProd, Statement.RETURN_GENERATED_KEYS)) {
                     pstProd.setString(1, txtNombre.getText());
                     pstProd.setString(2, txtDescripcion.getText());
-                    pstProd.setDouble(3, pVenta);
-                    pstProd.setDouble(4, pCompra);
+                    pstProd.setString(3, (String) cbCategoria.getSelectedItem());
+                    pstProd.setDouble(4, pVenta);
+                    pstProd.setDouble(5, pCompra);
                     pstProd.executeUpdate();
 
                     ResultSet rs = pstProd.getGeneratedKeys();
@@ -319,7 +328,7 @@ public class ProductosPanel extends JPanel {
             int stock = Integer.parseInt(txtStock.getText());
             int minimo = Integer.parseInt(txtMinimo.getText());
 
-            String sqlProd = "UPDATE Producto SET nombre=?, descripcion=?, precio_venta=?, precio_compra=? WHERE id_producto=?";
+            String sqlProd = "UPDATE Producto SET nombre=?, descripcion=?, categoria=?, precio_venta=?, precio_compra=? WHERE id_producto=?";
 
             // Check if inventory row exists
             boolean invExists = false;
@@ -339,9 +348,10 @@ public class ProductosPanel extends JPanel {
                 try (PreparedStatement pstProd = conn.prepareStatement(sqlProd)) {
                     pstProd.setString(1, txtNombre.getText());
                     pstProd.setString(2, txtDescripcion.getText());
-                    pstProd.setDouble(3, pVenta);
-                    pstProd.setDouble(4, pCompra);
-                    pstProd.setInt(5, id);
+                    pstProd.setString(3, (String) cbCategoria.getSelectedItem());
+                    pstProd.setDouble(4, pVenta);
+                    pstProd.setDouble(5, pCompra);
+                    pstProd.setInt(6, id);
                     pstProd.executeUpdate();
                 }
 
@@ -402,10 +412,11 @@ public class ProductosPanel extends JPanel {
         int row = table.getSelectedRow();
         txtNombre.setText(tableModel.getValueAt(row, 1).toString());
         txtDescripcion.setText(tableModel.getValueAt(row, 2) != null ? tableModel.getValueAt(row, 2).toString() : "");
-        txtPrecioVenta.setText(tableModel.getValueAt(row, 3).toString());
-        txtPrecioCompra.setText(tableModel.getValueAt(row, 4) != null ? tableModel.getValueAt(row, 4).toString() : "");
-        txtStock.setText(tableModel.getValueAt(row, 5).toString());
-        txtMinimo.setText(tableModel.getValueAt(row, 6).toString());
+        if (tableModel.getValueAt(row, 3) != null) cbCategoria.setSelectedItem(tableModel.getValueAt(row, 3).toString());
+        txtPrecioVenta.setText(tableModel.getValueAt(row, 4).toString());
+        txtPrecioCompra.setText(tableModel.getValueAt(row, 5) != null ? tableModel.getValueAt(row, 5).toString() : "");
+        txtStock.setText(tableModel.getValueAt(row, 6).toString());
+        txtMinimo.setText(tableModel.getValueAt(row, 7).toString());
     }
 
     private void clearForm() {
@@ -416,6 +427,62 @@ public class ProductosPanel extends JPanel {
         txtStock.setText("0");
         txtMinimo.setText("5");
         table.clearSelection();
+    }
+    @Override
+    public void handleVoiceCommand(String command, String args) {
+        switch (command) {
+            case "CLEAR":
+                clearForm();
+                break;
+            case "CREATE":
+                addProducto();
+                break;
+            case "UPDATE":
+                updateProducto();
+                break;
+            case "DELETE":
+                deleteProducto();
+                break;
+            case "SEARCH":
+                // ...
+                break;
+            case "SELECT":
+                if (args == null || args.isEmpty()) return;
+                String query = args.toLowerCase();
+                for (int i = 0; i < table.getRowCount(); i++) {
+                    // Column 1 is Nombre
+                    String name = table.getValueAt(i, 1).toString().toLowerCase();
+                    if (name.contains(query)) {
+                        table.setRowSelectionInterval(i, i);
+                        table.scrollRectToVisible(table.getCellRect(i, 0, true));
+                        loadSelection();
+                        break;
+                    }
+                }
+                break;
+            case "SET_FIELD":
+                String[] parts = args.split(" ", 2);
+                if (parts.length < 2) return;
+                String field = parts[0].toUpperCase();
+                String val = parts[1];
+                
+                switch (field) {
+                    case "NOMBRE": txtNombre.setText(val); break;
+                    case "DESCRIPCION": txtDescripcion.setText(val); break;
+                    case "PRECIO": 
+                        // Try to handle "PRECIO VENTA" or just "PRECIO"
+                        if (val.toUpperCase().contains("COMPRA")) {
+                             txtPrecioCompra.setText(val.replaceAll("[^0-9.]", ""));
+                        } else {
+                             txtPrecioVenta.setText(val.replaceAll("[^0-9.]", ""));
+                        }
+                        break;
+                    case "STOCK": txtStock.setText(val.replaceAll("[^0-9]", "")); break;
+                }
+                break;
+            default:
+                System.out.println("Comando no soportado en Productos: " + command);
+        }
     }
 }
 

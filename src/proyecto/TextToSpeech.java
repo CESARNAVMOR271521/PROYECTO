@@ -1,38 +1,46 @@
 package proyecto;
 
-import java.io.IOException;
+import com.sun.speech.freetts.Voice;
+import com.sun.speech.freetts.VoiceManager;
 
 /**
- * Provides Text-to-Speech functionality using Native Windows commands (PowerShell).
- * This avoids the need for external libraries like MaryTTS, using
- * System.Speech.Synthesis.SpeechSynthesizer built into Windows.
+ * Provides Text-to-Speech functionality using FreeTTS.
  */
 public class TextToSpeech {
+
+    private static Voice voice;
 
     public static void speak(String text) {
         if (text == null || text.trim().isEmpty()) {
             return;
         }
 
-        // Escape double quotes for PowerShell
-        String escapedText = text.replace("\"", "\\\"");
-
-        // PowerShell command to speak
-        // Add-Type -AssemblyName System.Speech; $synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; $synth.Speak("Hello")
-        String command = String.format(
-                "powershell.exe -Command \"Add-Type -AssemblyName System.Speech; " +
-                        "$synth = New-Object System.Speech.Synthesis.SpeechSynthesizer; " +
-                        "$synth.Speak(\\\"%s\\\");\"",
-                escapedText);
-
         new Thread(() -> {
             try {
-                // Execute command without opening a window if possible, but Runtime.exec matches
-                // standard behavior
-                Process p = Runtime.getRuntime().exec(command);
-                p.waitFor();
-            } catch (IOException | InterruptedException e) {
-                System.err.println("Error executing TTS: " + e.getMessage());
+                if (voice == null) {
+                    // Ensure the voice directory is found
+                    System.setProperty("freetts.voices", "com.sun.speech.freetts.en.us.cmu_us_kal.KevinVoiceDirectory");
+                    
+                    VoiceManager voiceManager = VoiceManager.getInstance();
+                    voice = voiceManager.getVoice("kevin16");
+                    
+                    if (voice == null) {
+                         System.out.println("Voice 'kevin16' not found, trying 'kevin'");
+                        voice = voiceManager.getVoice("kevin");
+                    }
+                    
+                    if (voice != null) {
+                        voice.allocate();
+                    } else {
+                        System.err.println("Cannot find a voice named 'kevin16' or 'kevin'");
+                        return;
+                    }
+                }
+                
+                voice.speak(text);
+                
+            } catch (Exception e) {
+                System.err.println("Error executing FreeTTS: " + e.getMessage());
                 e.printStackTrace();
             }
         }).start();

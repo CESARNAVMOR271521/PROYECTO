@@ -10,5 +10,9 @@
 	<classpathentry kind="lib" path="src/proyecto/itextpdf-5.5.9.jar"/>
 	<classpathentry kind="lib" path="src/proyecto/vosk-0.3.45.jar"/>
 	<classpathentry kind="lib" path="src/proyecto/jna-5.13.0.jar"/>
+	<classpathentry kind="lib" path="src/proyecto/freetts.jar"/>
+	<classpathentry kind="lib" path="src/proyecto/cmu_us_kal.jar"/>
+	<classpathentry kind="lib" path="src/proyecto/en_us.jar"/>
+	<classpathentry kind="lib" path="src/proyecto/cmulex.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

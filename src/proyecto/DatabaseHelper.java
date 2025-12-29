@@ -172,6 +172,32 @@ public class DatabaseHelper {
                                         stmt.execute(sql);
                                 }
                                 System.out.println("Tablas creadas o verificadas correctamente.");
+                                
+                                // Migration: Add categoria column if not exists
+                                try {
+                                    stmt.execute("ALTER TABLE Producto ADD COLUMN categoria TEXT");
+                                    System.out.println("Columna 'categoria' agregada a Producto.");
+                                } catch (SQLException e) {
+                                    // Column likely already exists
+                                }
+
+                                // Migration: Add nombre column to Usuario if not exists
+                                try {
+                                    stmt.execute("ALTER TABLE Usuario ADD COLUMN nombre TEXT DEFAULT 'Usuario'");
+                                    System.out.println("Columna 'nombre' agregada a Usuario.");
+                                } catch (SQLException e) {
+                                    // Column likely already exists
+                                }
+
+                                // Migration: Add usuario column to Usuario if not exists (Old schemas might be broken)
+                                try {
+                                    stmt.execute("ALTER TABLE Usuario ADD COLUMN usuario TEXT DEFAULT 'temp_user'");
+                                    System.out.println("Columna 'usuario' agregada a Usuario.");
+                                } catch (SQLException e) {
+                                    // Column likely already exists
+                                }
+
+                                proyecto.util.DataSeeder.seed();
                         }
                 } catch (SQLException e) {
                         System.out.println(e.getMessage());
