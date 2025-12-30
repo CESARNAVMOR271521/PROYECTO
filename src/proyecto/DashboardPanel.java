@@ -151,7 +151,8 @@ public class DashboardPanel extends JPanel {
     }
 
     private String getProductosBajoStock() {
-        String sql = "SELECT COUNT(*) FROM Inventario WHERE cantidad_actual <= minimo";
+        // Updated to query stock from Producto table
+        String sql = "SELECT COUNT(*) FROM Producto WHERE cantidad_actual <= minimo";
         try (Connection conn = DatabaseHelper.connect();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {

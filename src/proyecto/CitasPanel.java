@@ -157,6 +157,20 @@ public class CitasPanel extends JPanel implements VoiceAware {
         loadComboBoxes();
         loadData();
         
+        // Auto-refresh Date/Time when panel is CONSTANTLY shown
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
+                java.time.format.DateTimeFormatter dateFormatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                java.time.format.DateTimeFormatter timeFormatter = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+                txtFecha.setText(java.time.LocalDate.now().format(dateFormatter));
+                txtHora.setText(java.time.LocalTime.now().format(timeFormatter));
+                loadComboBoxes(); 
+                loadData();
+                System.out.println("CitasPanel: Refreshed data on show.");
+            }
+        });
+        
         Theme.bindActionKeys(this, btnAdd, btnDelete, btnRefresh, null);
     }
 
@@ -284,21 +298,14 @@ public class CitasPanel extends JPanel implements VoiceAware {
     }
     @Override
     public void handleVoiceCommand(String command, String args) {
+        String argUpper = (args != null) ? args.toUpperCase() : "";
+
         switch (command) {
             case "AGENDAR":
             case "CREATE":
-                // Args could be "Juan Perez tomorrow at 5"
-                // This is complex parsing. For now, we assume AI sent standardized JSON args or we just trigger the button.
-                // Better approach: AI prompt should extract "CLIENT:Juan", "TIME:17:00"
-                // For MVP: Just open dialog or try to match client from args
-                if (args != null && !args.isEmpty()) {
-                    // Try to finding client name in args
-                    for (int i=0; i<cbCliente.getItemCount(); i++) {
-                       if (args.toLowerCase().contains(cbCliente.getItemAt(i).toLowerCase())) {
-                           cbCliente.setSelectedIndex(i);
-                           break;
-                       }
-                    }
+                // If args provided (e.g. "Agendar Juan"), try to set client first
+                if (!argUpper.isEmpty()) { 
+                     setField("CLIENTE", argUpper);
                 }
                 addCita();
                 break;
@@ -307,8 +314,57 @@ public class CitasPanel extends JPanel implements VoiceAware {
                 deleteCita();
                 break;
             case "CLEAR":
-                // clear fields
+                // Reset combos to -1? Or defaults?
+                cbCliente.setSelectedIndex(-1);
+                cbBarbero.setSelectedIndex(-1);
+                cbServicio.setSelectedIndex(-1);
+                // Reset date/time to now?
+                java.time.format.DateTimeFormatter dF = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                java.time.format.DateTimeFormatter tF = java.time.format.DateTimeFormatter.ofPattern("HH:mm");
+                txtFecha.setText(java.time.LocalDate.now().format(dF));
+                txtHora.setText(java.time.LocalTime.now().format(tF));
                 break;
+                
+            case "SET_FIELD":
+                String[] parts = args.split(" ", 2);
+                if (parts.length < 2) return;
+                String field = parts[0].toUpperCase();
+                String val = parts[1];
+                setField(field, val);
+                break;
+        }
+    }
+
+    private void setField(String field, String val) {
+        val = val.toUpperCase().trim();
+        switch (field) {
+            case "CLIENTE":
+                selectInCombo(cbCliente, val);
+                break;
+            case "BARBERO":
+                selectInCombo(cbBarbero, val);
+                break;
+            case "SERVICIO":
+                selectInCombo(cbServicio, val);
+                break;
+            case "FECHA":
+                // formats as 2023-01-01
+                txtFecha.setText(val); 
+                break;
+            case "HORA":
+                txtHora.setText(val.replace(" PM", "").replace(" AM", "").trim()); 
+                break;
+        }
+    }
+
+    private void selectInCombo(JComboBox<String> cb, String search) {
+        for (int i = 0; i < cb.getItemCount(); i++) {
+            String item = cb.getItemAt(i).toUpperCase();
+            // Match strict or first word (e.g. "JUAN" matches "JUAN PEREZ")
+            if (item.contains(search) || (item.length() > 3 && search.contains(item.split(" ")[0]))) {
+                cb.setSelectedIndex(i);
+                return;
+            }
         }
     }
 }

@@ -71,6 +71,20 @@ public class ReconocimientoVoz {
         return instance;
     }
 
+    private volatile boolean paused = false;
+
+    // ... existing constructor ...
+
+    public void pauseListening() {
+        this.paused = true;
+        System.out.println("LOG: Reconocimiento pausado (TTS activo).");
+    }
+
+    public void resumeListening() {
+        this.paused = false;
+        System.out.println("LOG: Reconocimiento reanudado.");
+    }
+
     public void startListening(Consumer<String> onTextRecognized) {
         if (model == null) {
             System.err.println("No se puede iniciar: Modelo no cargado.");
@@ -103,6 +117,24 @@ public class ReconocimientoVoz {
                     byte[] b = new byte[4096];
 
                     while (running) {
+                        // Check paused state
+                        if (paused) {
+                            try { Thread.sleep(200); } catch (InterruptedException e) {}
+                            // Safely discard buffer using existing array
+                            try {
+                                int avail = line.available();
+                                while (avail > 0) {
+                                    int toRead = Math.min(avail, b.length);
+                                    int read = line.read(b, 0, toRead);
+                                    if (read <= 0) break;
+                                    avail = line.available();
+                                }
+                            } catch (Exception ex) {
+                                // Ignore buffer clearing errors to keep thread alive
+                            }
+                            continue;
+                        }
+
                         nbytes = line.read(b, 0, b.length);
 
                         if (nbytes >= 0) {

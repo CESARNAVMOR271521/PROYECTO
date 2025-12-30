@@ -27,7 +27,7 @@ import javax.swing.event.DocumentEvent;
 
 import proyecto.util.Theme;
 
-public class UsuariosPanel extends JPanel {
+public class UsuariosPanel extends JPanel implements VoiceAware {
 
     private JTable table;
     private DefaultTableModel tableModel;
@@ -250,5 +250,52 @@ public class UsuariosPanel extends JPanel {
         txtPassword.setText("");
         cbRol.setSelectedIndex(0);
         table.clearSelection();
+    }
+    @Override
+    public void handleVoiceCommand(String command, String args) {
+        switch (command) {
+            case "CLEAR":
+                clearForm();
+                break;
+            case "CREATE":
+                addUsuario();
+                break;
+            case "UPDATE":
+                updateUsuario();
+                break;
+            case "DELETE":
+                deleteUsuario();
+                break;
+            case "SEARCH":
+                txtBuscar.setText(args);
+                break;
+            case "SELECT":
+                if (args == null || args.isEmpty()) return;
+                String query = args.toLowerCase();
+                for (int i = 0; i < table.getRowCount(); i++) {
+                    String name = table.getValueAt(i, 1).toString().toLowerCase();
+                    if (name.contains(query)) {
+                        table.setRowSelectionInterval(i, i);
+                        table.scrollRectToVisible(table.getCellRect(i, 0, true));
+                        loadSelection();
+                        break;
+                    }
+                }
+                break;
+            case "SET_FIELD":
+                String[] parts = args.split(" ", 2);
+                if (parts.length < 2) return;
+                String field = parts[0].toUpperCase();
+                String val = parts[1];
+                
+                switch (field) {
+                    case "USUARIO": case "NOMBRE": txtUsuario.setText(val); break;
+                    case "PASSWORD": case "CONTRASENA": txtPassword.setText(val); break;
+                    case "ROL": cbRol.setSelectedItem(val.toLowerCase()); break;
+                }
+                break;
+            default:
+                System.out.println("Comando no soportado en Usuarios: " + command);
+        }
     }
 }

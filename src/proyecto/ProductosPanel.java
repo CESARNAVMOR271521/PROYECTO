@@ -31,6 +31,7 @@ public class ProductosPanel extends JPanel implements VoiceAware {
     private DefaultTableModel tableModel;
     private JTextField txtNombre, txtDescripcion, txtPrecioVenta, txtPrecioCompra;
     private JTextField txtStock, txtMinimo;
+    private JTextField txtSearch; // Promoted to field
     private JComboBox<String> cbCategoria;
 
     public ProductosPanel() {
@@ -83,7 +84,7 @@ public class ProductosPanel extends JPanel implements VoiceAware {
         lblSearch.setForeground(Theme.COLOR_TEXT);
         searchPanel.add(lblSearch);
         
-        JTextField txtSearch = new JTextField(20);
+        txtSearch = new JTextField(20);
         searchPanel.add(txtSearch);
 
         txtSearch.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
@@ -241,10 +242,8 @@ public class ProductosPanel extends JPanel implements VoiceAware {
 
     private void loadData() {
         tableModel.setRowCount(0);
-        String sql = "SELECT p.id_producto, p.nombre, p.descripcion, p.categoria, p.precio_venta, p.precio_compra, " +
-                "COALESCE(i.cantidad_actual, 0) as stock, COALESCE(i.minimo, 0) as minimo " +
-                "FROM Producto p " +
-                "LEFT JOIN Inventario i ON p.id_producto = i.id_producto";
+        String sql = "SELECT id_producto, nombre, descripcion, categoria, precio_venta, precio_compra, " +
+                "cantidad_actual, minimo FROM Producto";
 
         try (Connection conn = DatabaseHelper.connect();
                 Statement stmt = conn.createStatement();
@@ -258,7 +257,7 @@ public class ProductosPanel extends JPanel implements VoiceAware {
                         rs.getString("categoria"),
                         rs.getDouble("precio_venta"),
                         rs.getDouble("precio_compra"),
-                        rs.getInt("stock"),
+                        rs.getInt("cantidad_actual"),
                         rs.getInt("minimo")
                 });
             }
@@ -274,42 +273,24 @@ public class ProductosPanel extends JPanel implements VoiceAware {
             int stock = Integer.parseInt(txtStock.getText());
             int minimo = Integer.parseInt(txtMinimo.getText());
 
-            String sqlProd = "INSERT INTO Producto(nombre, descripcion, categoria, precio_venta, precio_compra) VALUES(?,?,?,?,?)";
-            String sqlInv = "INSERT INTO Inventario(id_producto, cantidad_actual, minimo) VALUES(?,?,?)";
+            String sql = "INSERT INTO Producto(nombre, descripcion, categoria, precio_venta, precio_compra, cantidad_actual, minimo) VALUES(?,?,?,?,?,?,?)";
 
-            try (Connection conn = DatabaseHelper.connect()) {
-                conn.setAutoCommit(false);
+            try (Connection conn = DatabaseHelper.connect();
+                    PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, txtNombre.getText());
+                pstmt.setString(2, txtDescripcion.getText());
+                pstmt.setString(3, (String) cbCategoria.getSelectedItem());
+                pstmt.setDouble(4, pVenta);
+                pstmt.setDouble(5, pCompra);
+                pstmt.setInt(6, stock);
+                pstmt.setInt(7, minimo);
+                pstmt.executeUpdate();
 
-                int idProducto = -1;
-                try (PreparedStatement pstProd = conn.prepareStatement(sqlProd, Statement.RETURN_GENERATED_KEYS)) {
-                    pstProd.setString(1, txtNombre.getText());
-                    pstProd.setString(2, txtDescripcion.getText());
-                    pstProd.setString(3, (String) cbCategoria.getSelectedItem());
-                    pstProd.setDouble(4, pVenta);
-                    pstProd.setDouble(5, pCompra);
-                    pstProd.executeUpdate();
-
-                    ResultSet rs = pstProd.getGeneratedKeys();
-                    if (rs.next())
-                        idProducto = rs.getInt(1);
-                }
-
-                if (idProducto != -1) {
-                    try (PreparedStatement pstInv = conn.prepareStatement(sqlInv)) {
-                        pstInv.setInt(1, idProducto);
-                        pstInv.setInt(2, stock);
-                        pstInv.setInt(3, minimo);
-                        pstInv.executeUpdate();
-                    }
-                }
-
-                conn.commit();
                 loadData();
                 clearForm();
                 JOptionPane.showMessageDialog(this, "Producto agregado correctamente.");
-
             } catch (SQLException e) {
-                JOptionPane.showMessageDialog(this, "Error al guardar (transacción): " + e.getMessage());
+                JOptionPane.showMessageDialog(this, "Error al guardar: " + e.getMessage());
             }
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Valores numéricos inválidos");
@@ -320,7 +301,8 @@ public class ProductosPanel extends JPanel implements VoiceAware {
         int row = table.getSelectedRow();
         if (row == -1)
             return;
-        int id = (int) tableModel.getValueAt(row, 0);
+        int modelRow = table.convertRowIndexToModel(row);
+        int id = (int) tableModel.getValueAt(modelRow, 0);
 
         try {
             double pVenta = Double.parseDouble(txtPrecioVenta.getText());
@@ -328,52 +310,28 @@ public class ProductosPanel extends JPanel implements VoiceAware {
             int stock = Integer.parseInt(txtStock.getText());
             int minimo = Integer.parseInt(txtMinimo.getText());
 
-            String sqlProd = "UPDATE Producto SET nombre=?, descripcion=?, categoria=?, precio_venta=?, precio_compra=? WHERE id_producto=?";
+            String sql = "UPDATE Producto SET nombre=?, descripcion=?, categoria=?, precio_venta=?, precio_compra=?, cantidad_actual=?, minimo=? WHERE id_producto=?";
 
-            // Check if inventory row exists
-            boolean invExists = false;
             try (Connection conn = DatabaseHelper.connect();
-                    PreparedStatement check = conn.prepareStatement("SELECT 1 FROM Inventario WHERE id_producto=?")) {
-                check.setInt(1, id);
-                invExists = check.executeQuery().next();
-            }
+                    PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, txtNombre.getText());
+                pstmt.setString(2, txtDescripcion.getText());
+                pstmt.setString(3, (String) cbCategoria.getSelectedItem());
+                pstmt.setDouble(4, pVenta);
+                pstmt.setDouble(5, pCompra);
+                pstmt.setInt(6, stock);
+                pstmt.setInt(7, minimo);
+                pstmt.setInt(8, id);
+                pstmt.executeUpdate();
 
-            String sqlInv = invExists
-                    ? "UPDATE Inventario SET cantidad_actual=?, minimo=? WHERE id_producto=?"
-                    : "INSERT INTO Inventario(cantidad_actual, minimo, id_producto) VALUES(?,?,?)";
-
-            try (Connection conn = DatabaseHelper.connect()) {
-                conn.setAutoCommit(false);
-
-                try (PreparedStatement pstProd = conn.prepareStatement(sqlProd)) {
-                    pstProd.setString(1, txtNombre.getText());
-                    pstProd.setString(2, txtDescripcion.getText());
-                    pstProd.setString(3, (String) cbCategoria.getSelectedItem());
-                    pstProd.setDouble(4, pVenta);
-                    pstProd.setDouble(5, pCompra);
-                    pstProd.setInt(6, id);
-                    pstProd.executeUpdate();
-                }
-
-                try (PreparedStatement pstInv = conn.prepareStatement(sqlInv)) {
-                    pstInv.setInt(1, stock);
-                    pstInv.setInt(2, minimo);
-                    pstInv.setInt(3, id);
-                    pstInv.executeUpdate();
-                }
-
-                conn.commit();
                 loadData();
                 clearForm();
                 JOptionPane.showMessageDialog(this, "Producto actualizado correctamente.");
-
             } catch (SQLException e) {
-                JOptionPane.showMessageDialog(this, "Error al actualizar (transacción): " + e.getMessage());
+                JOptionPane.showMessageDialog(this, "Error al actualizar: " + e.getMessage());
             }
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Valores numéricos inválidos");
-        } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error de BD: " + e.getMessage());
         }
     }
 
@@ -381,27 +339,17 @@ public class ProductosPanel extends JPanel implements VoiceAware {
         int row = table.getSelectedRow();
         if (row == -1)
             return;
-        int id = (int) tableModel.getValueAt(row, 0);
+        int modelRow = table.convertRowIndexToModel(row);
+        int id = (int) tableModel.getValueAt(modelRow, 0);
 
-        if (JOptionPane.showConfirmDialog(this, "¿Seguro de eliminar? Esto eliminará también el inventario.",
+        if (JOptionPane.showConfirmDialog(this, "¿Seguro de eliminar? Esto es irreversible.",
                 "Confirmar", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-            try (Connection conn = DatabaseHelper.connect()) {
-                conn.setAutoCommit(false);
-
-                try (PreparedStatement pstInv = conn.prepareStatement("DELETE FROM Inventario WHERE id_producto=?")) {
-                    pstInv.setInt(1, id);
-                    pstInv.executeUpdate();
-                }
-
-                try (PreparedStatement pstProd = conn.prepareStatement("DELETE FROM Producto WHERE id_producto=?")) {
-                    pstProd.setInt(1, id);
-                    pstProd.executeUpdate();
-                }
-
-                conn.commit();
+            try (Connection conn = DatabaseHelper.connect();
+                    PreparedStatement pstmt = conn.prepareStatement("DELETE FROM Producto WHERE id_producto=?")) {
+                pstmt.setInt(1, id);
+                pstmt.executeUpdate();
                 loadData();
                 clearForm();
-
             } catch (SQLException e) {
                 JOptionPane.showMessageDialog(this, "Error al eliminar: " + e.getMessage());
             }
@@ -410,13 +358,15 @@ public class ProductosPanel extends JPanel implements VoiceAware {
 
     private void loadSelection() {
         int row = table.getSelectedRow();
-        txtNombre.setText(tableModel.getValueAt(row, 1).toString());
-        txtDescripcion.setText(tableModel.getValueAt(row, 2) != null ? tableModel.getValueAt(row, 2).toString() : "");
-        if (tableModel.getValueAt(row, 3) != null) cbCategoria.setSelectedItem(tableModel.getValueAt(row, 3).toString());
-        txtPrecioVenta.setText(tableModel.getValueAt(row, 4).toString());
-        txtPrecioCompra.setText(tableModel.getValueAt(row, 5) != null ? tableModel.getValueAt(row, 5).toString() : "");
-        txtStock.setText(tableModel.getValueAt(row, 6).toString());
-        txtMinimo.setText(tableModel.getValueAt(row, 7).toString());
+        if (row == -1) return;
+        int modelRow = table.convertRowIndexToModel(row);
+        txtNombre.setText(tableModel.getValueAt(modelRow, 1).toString());
+        txtDescripcion.setText(tableModel.getValueAt(modelRow, 2) != null ? tableModel.getValueAt(modelRow, 2).toString() : "");
+        if (tableModel.getValueAt(modelRow, 3) != null) cbCategoria.setSelectedItem(tableModel.getValueAt(modelRow, 3).toString());
+        txtPrecioVenta.setText(tableModel.getValueAt(modelRow, 4).toString());
+        txtPrecioCompra.setText(tableModel.getValueAt(modelRow, 5) != null ? tableModel.getValueAt(modelRow, 5).toString() : "");
+        txtStock.setText(tableModel.getValueAt(modelRow, 6).toString());
+        txtMinimo.setText(tableModel.getValueAt(modelRow, 7).toString());
     }
 
     private void clearForm() {
@@ -435,6 +385,9 @@ public class ProductosPanel extends JPanel implements VoiceAware {
                 clearForm();
                 break;
             case "CREATE":
+                if (args != null && !args.isEmpty()) {
+                    txtNombre.setText(args);
+                }
                 addProducto();
                 break;
             case "UPDATE":
@@ -444,7 +397,7 @@ public class ProductosPanel extends JPanel implements VoiceAware {
                 deleteProducto();
                 break;
             case "SEARCH":
-                // ...
+                if (args != null) txtSearch.setText(args);
                 break;
             case "SELECT":
                 if (args == null || args.isEmpty()) return;
@@ -460,6 +413,7 @@ public class ProductosPanel extends JPanel implements VoiceAware {
                     }
                 }
                 break;
+
             case "SET_FIELD":
                 String[] parts = args.split(" ", 2);
                 if (parts.length < 2) return;
@@ -469,17 +423,60 @@ public class ProductosPanel extends JPanel implements VoiceAware {
                 switch (field) {
                     case "NOMBRE": txtNombre.setText(val); break;
                     case "DESCRIPCION": txtDescripcion.setText(val); break;
-                    case "PRECIO": 
-                        // Try to handle "PRECIO VENTA" or just "PRECIO"
-                        if (val.toUpperCase().contains("COMPRA")) {
-                             txtPrecioCompra.setText(val.replaceAll("[^0-9.]", ""));
-                        } else {
-                             txtPrecioVenta.setText(val.replaceAll("[^0-9.]", ""));
+                    
+                    case "CATEGORIA":
+                        for(int i=0; i<cbCategoria.getItemCount(); i++) {
+                             if(cbCategoria.getItemAt(i).equalsIgnoreCase(val)) {
+                                 cbCategoria.setSelectedIndex(i);
+                                 break;
+                             }
                         }
                         break;
-                    case "STOCK": txtStock.setText(val.replaceAll("[^0-9]", "")); break;
+                        
+                    case "PRECIO": 
+                    case "PRECIO_VENTA":
+                    case "VENTA":
+                        txtPrecioVenta.setText(val.replaceAll("[^0-9.]", "")); 
+                        break;
+                        
+                    case "COSTO": 
+                    case "PRECIO_COMPRA":
+                    case "COMPRA":
+                        txtPrecioCompra.setText(val.replaceAll("[^0-9.]", "")); 
+                        break;
+                        
+                    case "STOCK": 
+                    case "CANTIDAD":
+                    case "EXISTENCIA":
+                        txtStock.setText(val.replaceAll("[^0-9]", "")); 
+                        break;
+                        
+                    case "MINIMO": 
+                    case "ALERTA":
+                        txtMinimo.setText(val.replaceAll("[^0-9]", "")); 
+                        break;
                 }
                 break;
+                
+            case "FILTER":
+                if (args != null && !args.isEmpty()) {
+                    // If arg matches a category, set combo
+                    boolean catFound = false;
+                    for(int i=0; i<cbCategoria.getItemCount(); i++) {
+                        if (cbCategoria.getItemAt(i).equalsIgnoreCase(args)) {
+                            cbCategoria.setSelectedIndex(i);
+                            // Also filter table by this text?
+                            txtSearch.setText(args);
+                            catFound = true;
+                            break;
+                        }
+                    }
+                    if (!catFound) {
+                        txtSearch.setText(args);
+                    }
+                }
+                break;
+                
             default:
                 System.out.println("Comando no soportado en Productos: " + command);
         }

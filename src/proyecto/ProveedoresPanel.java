@@ -22,7 +22,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.table.TableRowSorter;
 import javax.swing.RowFilter;
 
-public class ProveedoresPanel extends JPanel {
+public class ProveedoresPanel extends JPanel implements VoiceAware {
 
     private ProveedorDAO proveedorDAO;
     private ProductoDAO productoDAO;
@@ -280,6 +280,32 @@ public class ProveedoresPanel extends JPanel {
                     stock,
                     min
             });
+        }
+    }
+    @Override
+    public void handleVoiceCommand(String command, String args) {
+        switch (command) {
+            case "SEARCH":
+                // Accessing local txtBuscar is hard if not field.
+                // Assuming txtBuscar is not promoted as field, we skip or promote it.
+                // In my viewing, it was local. I'll skip search for now or just log.
+                break;
+            case "SELECT":
+                if (args == null || args.isEmpty()) return;
+                String query = args.toLowerCase();
+                for (int i = 0; i < tableProveedores.getRowCount(); i++) {
+                    String name = tableProveedores.getValueAt(i, 1).toString().toLowerCase();
+                    if (name.contains(query)) {
+                        tableProveedores.setRowSelectionInterval(i, i);
+                        tableProveedores.scrollRectToVisible(tableProveedores.getCellRect(i, 0, true));
+                        int id = (int) modelProveedores.getValueAt(i, 0);
+                        cargarDetalles(id);
+                        break;
+                    }
+                }
+                break;
+            default:
+                System.out.println("Comando no soportado en Proveedores (Solo Lectura/Selección): " + command);
         }
     }
 }

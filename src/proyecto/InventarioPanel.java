@@ -176,16 +176,15 @@ public class InventarioPanel extends JPanel {
 
     private void loadData() {
         tableModel.setRowCount(0);
-        String sql = "SELECT i.id_inventario, p.nombre, i.cantidad_actual, i.minimo " +
-                "FROM Inventario i " +
-                "JOIN Producto p ON i.id_producto = p.id_producto";
+        // Consolidated query from single table
+        String sql = "SELECT id_producto, nombre, cantidad_actual, minimo FROM Producto";
         try (Connection conn = DatabaseHelper.connect();
                 Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
                 tableModel.addRow(new Object[] {
-                        rs.getInt("id_inventario"),
+                        rs.getInt("id_producto"),
                         rs.getString("nombre"),
                         rs.getInt("cantidad_actual"),
                         rs.getInt("minimo")
@@ -206,22 +205,7 @@ public class InventarioPanel extends JPanel {
             int cantidad = Integer.parseInt(txtCantidad.getText());
             int minimo = Integer.parseInt(txtMinimo.getText());
 
-            // Check if entry exists
-            boolean exists = false;
-            try (Connection conn = DatabaseHelper.connect();
-                    PreparedStatement checkStmt = conn
-                            .prepareStatement("SELECT 1 FROM Inventario WHERE id_producto=?")) {
-                checkStmt.setInt(1, idProducto);
-                if (checkStmt.executeQuery().next())
-                    exists = true;
-            }
-
-            String sql;
-            if (exists) {
-                sql = "UPDATE Inventario SET cantidad_actual=?, minimo=? WHERE id_producto=?";
-            } else {
-                sql = "INSERT INTO Inventario(cantidad_actual, minimo, id_producto) VALUES(?,?,?)";
-            }
+            String sql = "UPDATE Producto SET cantidad_actual=?, minimo=? WHERE id_producto=?";
 
             try (Connection conn = DatabaseHelper.connect();
                     PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -232,6 +216,7 @@ public class InventarioPanel extends JPanel {
                 loadData();
                 txtCantidad.setText("");
                 txtMinimo.setText("");
+                JOptionPane.showMessageDialog(this, "Stock actualizado.");
             }
 
         } catch (NumberFormatException e) {

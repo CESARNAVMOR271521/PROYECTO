@@ -26,7 +26,7 @@ import javax.swing.event.DocumentEvent;
 
 import proyecto.util.Theme;
 
-public class ServiciosPanel extends JPanel {
+public class ServiciosPanel extends JPanel implements VoiceAware {
 
     private JTable table;
     private DefaultTableModel tableModel;
@@ -258,5 +258,52 @@ public class ServiciosPanel extends JPanel {
         txtDescripcion.setText("");
         txtPrecio.setText("");
         table.clearSelection();
+    }
+    @Override
+    public void handleVoiceCommand(String command, String args) {
+        switch (command) {
+            case "CLEAR":
+                clearForm();
+                break;
+            case "CREATE":
+                addServicio();
+                break;
+            case "UPDATE":
+                updateServicio();
+                break;
+            case "DELETE":
+                deleteServicio();
+                break;
+            case "SEARCH":
+                txtBuscar.setText(args);
+                break;
+            case "SELECT":
+                if (args == null || args.isEmpty()) return;
+                String query = args.toLowerCase();
+                for (int i = 0; i < table.getRowCount(); i++) {
+                    String name = table.getValueAt(i, 1).toString().toLowerCase();
+                    if (name.contains(query)) {
+                        table.setRowSelectionInterval(i, i);
+                        table.scrollRectToVisible(table.getCellRect(i, 0, true));
+                        loadSelection();
+                        break;
+                    }
+                }
+                break;
+            case "SET_FIELD":
+                String[] parts = args.split(" ", 2);
+                if (parts.length < 2) return;
+                String field = parts[0].toUpperCase();
+                String val = parts[1];
+                
+                switch (field) {
+                    case "NOMBRE": txtNombre.setText(val); break;
+                    case "DESCRIPCION": txtDescripcion.setText(val); break;
+                    case "PRECIO": txtPrecio.setText(val.replaceAll("[^0-9.]", "")); break;
+                }
+                break;
+            default:
+                System.out.println("Comando no soportado en Servicios: " + command);
+        }
     }
 }

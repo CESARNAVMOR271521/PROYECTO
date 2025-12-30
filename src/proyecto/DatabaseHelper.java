@@ -2,12 +2,14 @@ package proyecto;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
 public class DatabaseHelper {
 
-        private static final String URL = "jdbc:sqlite:barberia.db";
+        // Use absolute path to ensure DB is found regardless of execution context
+        private static final String URL = "jdbc:sqlite:" + System.getProperty("user.dir") + "/barberia.db";
 
         public static Connection connect() {
                 Connection conn = null;
@@ -70,8 +72,11 @@ public class DatabaseHelper {
                                                 + "    id_producto       INTEGER PRIMARY KEY AUTOINCREMENT,\n"
                                                 + "    nombre            TEXT NOT NULL,\n"
                                                 + "    descripcion       TEXT,\n"
+                                                + "    categoria         TEXT,\n"
                                                 + "    precio_venta      REAL NOT NULL,\n"
                                                 + "    precio_compra     REAL,\n"
+                                                + "    cantidad_actual   INTEGER DEFAULT 0,\n"
+                                                + "    minimo            INTEGER DEFAULT 5,\n"
                                                 + "    id_proveedor      INTEGER,\n"
                                                 + "    FOREIGN KEY (id_proveedor) REFERENCES Proveedor(id_proveedor)\n"
                                                 + ");",
@@ -123,14 +128,6 @@ public class DatabaseHelper {
                                                 + "    FOREIGN KEY (id_venta) REFERENCES Venta(id_venta)\n"
                                                 + ");",
 
-                                "CREATE TABLE IF NOT EXISTS Inventario (\n"
-                                                + "    id_inventario     INTEGER PRIMARY KEY AUTOINCREMENT,\n"
-                                                + "    id_producto       INTEGER NOT NULL,\n"
-                                                + "    cantidad_actual   INTEGER NOT NULL,\n"
-                                                + "    minimo            INTEGER DEFAULT 0,\n"
-                                                + "    FOREIGN KEY (id_producto) REFERENCES Producto(id_producto)\n"
-                                                + ");",
-
                                 "CREATE TABLE IF NOT EXISTS CompraProveedor (\n"
                                                 + "    id_compra         INTEGER PRIMARY KEY AUTOINCREMENT,\n"
                                                 + "    id_proveedor      INTEGER NOT NULL,\n"
@@ -173,29 +170,51 @@ public class DatabaseHelper {
                                 }
                                 System.out.println("Tablas creadas o verificadas correctamente.");
                                 
+                                // Migration: Add columns to Producto if not exists
+                                try {
+                                    stmt.execute("ALTER TABLE Producto ADD COLUMN cantidad_actual INTEGER DEFAULT 0");
+                                    System.out.println("Columna 'cantidad_actual' agregada a Producto.");
+                                } catch (SQLException e) { }
+
+                                try {
+                                    stmt.execute("ALTER TABLE Producto ADD COLUMN minimo INTEGER DEFAULT 5");
+                                    System.out.println("Columna 'minimo' agregada a Producto.");
+                                } catch (SQLException e) { }
+                                
+                                // Migration: Move data from Inventario to Producto if Inventario exists
+                                try {
+                                    // Check if Inventario table exists
+                                    ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='Inventario'");
+                                    if (rs.next()) {
+                                        System.out.println("Migrando datos de Inventario a Producto...");
+                                        stmt.executeUpdate("UPDATE Producto SET " + 
+                                            "cantidad_actual = COALESCE((SELECT cantidad_actual FROM Inventario WHERE Inventario.id_producto = Producto.id_producto), 0), " +
+                                            "minimo = COALESCE((SELECT minimo FROM Inventario WHERE Inventario.id_producto = Producto.id_producto), 5) " +
+                                            "WHERE EXISTS (SELECT 1 FROM Inventario WHERE Inventario.id_producto = Producto.id_producto)");
+                                        
+                                        // Optional: Drop Inventario table after migration
+                                        // stmt.execute("DROP TABLE Inventario");
+                                        // Keeping it for now just in case, or we can drop it to be clean.
+                                        // User asked to reduce tables, so let's drop it if migration succeeded.
+                                        stmt.execute("DROP TABLE Inventario");
+                                        System.out.println("Tabla Inventario eliminada tras migración.");
+                                    }
+                                } catch (SQLException e) {
+                                    System.out.println("Nota durante migración: " + e.getMessage());
+                                }
+
                                 // Migration: Add categoria column if not exists
                                 try {
                                     stmt.execute("ALTER TABLE Producto ADD COLUMN categoria TEXT");
-                                    System.out.println("Columna 'categoria' agregada a Producto.");
-                                } catch (SQLException e) {
-                                    // Column likely already exists
-                                }
+                                } catch (SQLException e) { }
 
-                                // Migration: Add nombre column to Usuario if not exists
+                                // Migration: Add nombre/usuario column to Usuario if not exists
                                 try {
                                     stmt.execute("ALTER TABLE Usuario ADD COLUMN nombre TEXT DEFAULT 'Usuario'");
-                                    System.out.println("Columna 'nombre' agregada a Usuario.");
-                                } catch (SQLException e) {
-                                    // Column likely already exists
-                                }
-
-                                // Migration: Add usuario column to Usuario if not exists (Old schemas might be broken)
+                                } catch (SQLException e) { }
                                 try {
                                     stmt.execute("ALTER TABLE Usuario ADD COLUMN usuario TEXT DEFAULT 'temp_user'");
-                                    System.out.println("Columna 'usuario' agregada a Usuario.");
-                                } catch (SQLException e) {
-                                    // Column likely already exists
-                                }
+                                } catch (SQLException e) { }
 
                                 proyecto.util.DataSeeder.seed();
                         }

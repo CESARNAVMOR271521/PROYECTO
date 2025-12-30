@@ -346,9 +346,9 @@ public class VentasPanel extends JPanel implements VoiceAware {
                         pstDetalle.setInt(2, idItem);
                         pstDetalle.setNull(3, java.sql.Types.INTEGER);
 
-                        // Update Inventory
+                        // Update Inventory (Now in Producto)
                         PreparedStatement pstInv = conn.prepareStatement(
-                                "UPDATE Inventario SET cantidad_actual = cantidad_actual - ? WHERE id_producto = ?");
+                                "UPDATE Producto SET cantidad_actual = cantidad_actual - ? WHERE id_producto = ?");
                         pstInv.setInt(1, qty);
                         pstInv.setInt(2, idItem);
                         pstInv.executeUpdate();
@@ -437,12 +437,46 @@ public class VentasPanel extends JPanel implements VoiceAware {
                 
                 if (bestMatch != -1) {
                     cbItem.setSelectedIndex(bestMatch);
-                    // Optional: Speak confirmation? 
-                    // Main app handles speech usually, but here we can just do the action.
+                    // Automatically add if high confidence or user said "Agrega"
                     addItemToCart();
                 } else {
                     System.out.println("Item no encontrado: " + args);
                 }
+                break;
+            
+            case "SET_PAYMENT":
+                if (args.equalsIgnoreCase("TARJETA")) {
+                    rbTarjeta.setSelected(true);
+                } else {
+                    rbEfectivo.setSelected(true);
+                }
+                break;
+
+            case "PROCESS_SALE":
+            case "COBRAR": // Alias
+                processSale();
+                break;
+
+            case "DELETE": 
+                // "Borra el ultimo" or "Quita corte"
+                // For now, if args.contains("TODO"), clear sale.
+                if (args.contains("TODO") || args.contains("VENTA")) {
+                    clearSale();
+                } else {
+                    // Try to remove selected row, or last row if none selected
+                    int row = cartTable.getSelectedRow();
+                    if (row == -1 && cartTable.getRowCount() > 0) {
+                        row = cartTable.getRowCount() - 1;
+                    }
+                    if (row != -1) {
+                         cartModel.removeRow(row);
+                         updateTotal();
+                    }
+                }
+                break;
+                
+            case "CLEAR":
+                clearSale();
                 break;
                 
             case "AUMENTA":

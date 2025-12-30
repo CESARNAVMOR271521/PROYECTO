@@ -17,6 +17,9 @@ public class TextToSpeech {
 
         new Thread(() -> {
             try {
+                // PAUSE LISTENING to avoid self-hearing
+                ReconocimientoVoz.getInstance().pauseListening();
+
                 if (voice == null) {
                     // Ensure the voice directory is found
                     System.setProperty("freetts.voices", "com.sun.speech.freetts.en.us.cmu_us_kal.KevinVoiceDirectory");
@@ -42,6 +45,9 @@ public class TextToSpeech {
             } catch (Exception e) {
                 System.err.println("Error executing FreeTTS: " + e.getMessage());
                 e.printStackTrace();
+            } finally {
+                // RESUME LISTENING
+                ReconocimientoVoz.getInstance().resumeListening();
             }
         }).start();
     }

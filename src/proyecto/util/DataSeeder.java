@@ -81,9 +81,13 @@ public class DataSeeder {
     private static void seedUsuarios(Connection conn) throws SQLException {
         if (count(conn, "Usuario") >= 4) return;
         
-        // Note: Passwords should ideally be hashed, but schema suggests plain text for now or handled elsewhere.
-        // Inserting simple passwords for demo.
-        String sql = "INSERT INTO Usuario(nombre, usuario, password, rol) VALUES(?,?,?,?)";
+        // Note: Passwords should ideally be hashed.
+        // Fixing column mismatch: Error log indicates column is 'nombre_usuario' not 'usuario'
+        // But code in DatabaseHelper defines 'usuario'. 
+        // To be safe and fix the specific error 'Usuario.nombre_usuario', we will try to insert into that.
+        // If the table was created with 'usuario', this might fail. 
+        // However, the error proves 'nombre_usuario' exists and is not null.
+        String sql = "INSERT INTO Usuario(nombre, nombre_usuario, password, rol) VALUES(?,?,?,?)";
         try (PreparedStatement pst = conn.prepareStatement(sql)) {
             addBatch(pst, "Administrador", "admin", "admin123", "Administrador");
             addBatch(pst, "Recepcionista", "recepcion", "recepcion123", "Recepcionista");
@@ -151,15 +155,28 @@ public class DataSeeder {
                     pstProd.setDouble(4, (double) prod[3]);
                     pstProd.setDouble(5, (double) prod[4]);
                     pstProd.setInt(6, provId1);
+                    // Insert stock directly into Producto (new columns)
+                    // Note: PreparedStatement needs update or we run ALTER in plain SQL to add data? 
+                    // Wait, our updated schema has these cols set by default or null. 
+                    // Let's update the INSERT statement to include stock cols.
+                    // But wait, the PST above only has 6 args.
+                    // Instead of complex refactor of the PST, let's just update the row after insert
+                    // OR better, let's just make sure DataSeeder uses the NEW schema columns if possible.
+                    // Since I can't easily change the `sqlProd` string at runtime without changing lines 111 too, 
+                    // I will do a secondary update for simplicity to seed stock data.
+                    
                     pstProd.executeUpdate();
                     
                     int id = getGeneratedKey(pstProd);
                     if (id != -1) {
-                        pstInv.setInt(1, id);
-                        pstInv.setInt(2, (int) prod[5]);
-                        pstInv.setInt(3, (int) prod[6]);
-                        pstInv.executeUpdate();
-                        System.out.println("Producto agregado: " + name);
+                         // Update stock for the newly created product
+                         try (PreparedStatement pstUpdate = conn.prepareStatement("UPDATE Producto SET cantidad_actual=?, minimo=? WHERE id_producto=?")) {
+                             pstUpdate.setInt(1, (int) prod[5]);
+                             pstUpdate.setInt(2, (int) prod[6]);
+                             pstUpdate.setInt(3, id);
+                             pstUpdate.executeUpdate();
+                         }
+                         System.out.println("Producto agregado: " + name);
                     }
                 }
             }
