@@ -74,6 +74,9 @@ public class BarberiaChupirules {
         });
     }
 
+    private JLabel lblTitle;
+    private JLabel lblSubtitle;
+
     public BarberiaChupirules() {
         // Default constructor for design preview or legacy
         initialize(null);
@@ -116,22 +119,26 @@ public class BarberiaChupirules {
         header.setPreferredSize(new Dimension(260, 120));
         header.setBorder(BorderFactory.createEmptyBorder(25, 20, 25, 20));
 
-        JLabel lblTitle = new JLabel("CHUPIRULES");
+        lblTitle = new JLabel("CHUPIRULES");
         lblTitle.setHorizontalAlignment(SwingConstants.CENTER);
         lblTitle.setForeground(Theme.COLOR_ACCENT_GOLD);
         lblTitle.setFont(Theme.FONT_TITLE);
 
-        JLabel lblSubtitle = new JLabel("BARBER SHOP");
+        lblSubtitle = new JLabel("BARBER SHOP");
         lblSubtitle.setHorizontalAlignment(SwingConstants.CENTER);
         lblSubtitle.setForeground(Theme.COLOR_TEXT_MUTED);
         lblSubtitle.setFont(Theme.FONT_SUBTITLE);
+
+        // Load custom name if exists
+        loadConfig();
 
         header.add(lblTitle, BorderLayout.CENTER);
         header.add(lblSubtitle, BorderLayout.SOUTH);
         sidebar.add(header, BorderLayout.NORTH);
 
         // MENÚ LATERAL
-        JPanel menuContainer = new JPanel(new GridLayout(0, 1, 0, 5)); 
+        JPanel menuContainer = new JPanel(); 
+        menuContainer.setLayout(new javax.swing.BoxLayout(menuContainer, javax.swing.BoxLayout.Y_AXIS));
         menuContainer.setBackground(Theme.COLOR_SECONDARY);
         menuContainer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         sidebar.add(menuContainer, BorderLayout.CENTER);
@@ -143,58 +150,59 @@ public class BarberiaChupirules {
         contentPanel.setBackground(Theme.COLOR_PRIMARY); 
         frame.add(contentPanel, BorderLayout.CENTER);
 
-        if (loader != null) loader.updateProgress(25, "Cargando Dashboard...");
-        // 🏠 DASHBOARD (Inicio)
-        addModule(menuContainer, "Inicio", "INICIO", new DashboardPanel(), null);
+        if (loader != null) loader.updateProgress(25, "Cargando componentes...");
 
-        if (loader != null) loader.updateProgress(30, "Cargando módulo de Clientes...");
-        // MÓDULOS (F1 -> F12)
-        addModule(menuContainer, "Clientes (F1)", "CLIENTES", new ClientesPanel(), "F1");
+        // === SECCIÓN: PRINCIPAL ===
+        // addMenuSection(menuContainer, "PRINCIPAL");
         
-        if (loader != null) loader.updateProgress(35, "Cargando módulo de Barberos...");
-        addModule(menuContainer, "Barberos (F2)", "BARBEROS", new BarberosPanel(), "F2");
-        
-        if (loader != null) loader.updateProgress(40, "Cargando Servicios...");
-        addModule(menuContainer, "Servicios (F3)", "SERVICIOS", new ServiciosPanel(), "F3");
-        
-        if (loader != null) loader.updateProgress(45, "Cargando Citas...");
-        addModule(menuContainer, "Citas (F4)", "CITAS", new CitasPanel(), "F4");
-        
-        if (loader != null) loader.updateProgress(50, "Cargando Ventas...");
-        addModule(menuContainer, "Ventas (F5)", "VENTAS", new VentasPanel(), "F5");
-        
-        if (loader != null) loader.updateProgress(55, "Cargando Historial...");
-        addModule(menuContainer, "Historial (F6)", "DETALLE", new HistorialPanel(), "F6");
-        
-        if (loader != null) loader.updateProgress(60, "Cargando Productos...");
-        addModule(menuContainer, "Productos (F7)", "PRODUCTOS", new ProductosPanel(), "F7");
+        // 🏠 DASHBOARD (Inicio) -> F1
+        addModule(menuContainer, "🏠 Inicio (F1)", "INICIO", new DashboardPanel(this::setModuleActive), "F1");
 
-        if (loader != null) loader.updateProgress(65, "Cargando Proveedores...");
-        addModule(menuContainer, "Proveedores (F8)", "PROVEEDORES", new ProveedoresPanel(), "F8");
+        // 💰 Ventas & 📅 Citas (Core)
+        addModule(menuContainer, "💰 Ventas (F2)", "VENTAS", new VentasPanel(), "F2");
+        addModule(menuContainer, "📅 Citas (F3)", "CITAS", new CitasPanel(), "F3");
 
-        if (loader != null) loader.updateProgress(70, "Cargando Usuarios y Pagos...");
-        addModule(menuContainer, "Usuarios (F9)", "USUARIOS", new UsuariosPanel(), "F9");
-        addModule(menuContainer, "Pagos (F10)", "PAGOS", new PagosPanel(), "F10");
-
-        if (loader != null) loader.updateProgress(75, "Cargando Compras...");
-        addModule(menuContainer, "Compras (F11)", "COMPRAS", new ComprasPanel(), "F11");
-
-        if (loader != null) loader.updateProgress(80, "Cargando Facturación...");
-        addModule(menuContainer, "Facturas (F12)", "FACTURAS", new FacturasPanel(), "F12");
+        addMenuSpacer(menuContainer);
+        addMenuSection(menuContainer, "GESTIÓN");
         
-        addModule(menuContainer, "Voz (Shift+F12)", "VOZ_LOGS", new RegistroVozPanel(), "shift F12");
+        // 👥 Clientes
+        addModule(menuContainer, "👥 Clientes (F4)", "CLIENTES", new ClientesPanel(), "F4");
+        // 📦 Productos & 💇 Servicios
+        addModule(menuContainer, "📦 Productos (F5)", "PRODUCTOS", new ProductosPanel(), "F5");
+        addModule(menuContainer, "💇 Servicios (F6)", "SERVICIOS", new ServiciosPanel(), "F6");
+        // 💈 Barberos
+        addModule(menuContainer, "💈 Barberos (F7)", "BARBEROS", new BarberosPanel(), "F7");
 
+        addMenuSpacer(menuContainer);
+        addMenuSection(menuContainer, "ADMINISTRACIÓN");
+
+        // 🛒 Compras & 🏭 Proveedores
+        addModule(menuContainer, "🛒 Compras (F8)", "COMPRAS", new ComprasPanel(), "F8");
+        addModule(menuContainer, "🏭 Proveedores (F9)", "PROVEEDORES", new ProveedoresPanel(), "F9");
+        // 📜 Historial & 🧾 Facturas
+        addModule(menuContainer, "📜 Historial (F10)", "DETALLE", new HistorialPanel(), "F10");
+        addModule(menuContainer, "🧾 Facturas (F11)", "FACTURAS", new FacturasPanel(), "F11");
+
+        addMenuSpacer(menuContainer);
+        addMenuSection(menuContainer, "SISTEMA");
+        
+        // 👥 Usuarios & 💳 Pagos & 🎤 Voz
+        addModule(menuContainer, "⚙️ Usuarios (Shft+F1)", "USUARIOS", new UsuariosPanel(), "shift F1");
+        addModule(menuContainer, "💳 Pagos (Shft+F2)", "PAGOS", new PagosPanel(), "shift F2");
+        addModule(menuContainer, "🎤 Voz (Shft+F3)", "VOZ_LOGS", new RegistroVozPanel(), "shift F3");
+        
+        // 🔧 Configuración (New Panel)
+        addModule(menuContainer, "🔧 Configuración (Shft+F4)", "CONFIG", new ConfiguracionPanel(), "shift F4");
+        
         // FOOTER SALIR
         JPanel footer = new JPanel();
         footer.setBackground(Theme.COLOR_SECONDARY);
         footer.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
 
-        JButton btnSalir = createMenuButton("SALIR");
+        JButton btnSalir = createMenuButton("🚪 SALIR");
         btnSalir.setBackground(Theme.COLOR_ACCENT_RED);
         btnSalir.setForeground(Color.WHITE);
-        btnSalir.setBorder(new Theme.RoundedBorder(10, Theme.COLOR_ACCENT_RED));
-        // Need to override logic for custom painting on exit button or keep as menu button style
-        // Let's keep consistent but red
+        // btnSalir.setBorder(new Theme.RoundedBorder(10, Theme.COLOR_ACCENT_RED)); // Replaced by custom paint
         btnSalir.addActionListener(e -> System.exit(0));
 
         footer.add(btnSalir);
@@ -221,6 +229,19 @@ public class BarberiaChupirules {
         
         if (loader != null) loader.updateProgress(100, "¡Bienvenido!");
     }
+    
+    // --- PERSISTENCIA DE CONFIGURACIÓN ---
+    
+    // Loaded via proyecto.util.Config
+    
+    private void loadConfig() {
+        String nombre = proyecto.util.Config.get("nombre_negocio", "CHUPIRULES");
+        if (lblTitle != null) lblTitle.setText(nombre.toUpperCase());
+    }
+    
+    private void cambiarNombreNegocio() {
+        new proyecto.vista.ConfiguracionDialog(frame, this::loadConfig).setVisible(true);
+    }
 
     private void addModule(JPanel container, String text, String cardName, JPanel panel, String keyStroke) {
         JButton btn = createMenuButton(text);
@@ -228,6 +249,8 @@ public class BarberiaChupirules {
         btn.setToolTipText("Abrir módulo de " + text.replace(" (", "").replace(")", ""));
 
         container.add(btn);
+        // Add spacing between buttons
+        container.add(javax.swing.Box.createVerticalStrut(8));
         
         // Force apply recursive theme
         Theme.applyRecursive(panel);
@@ -240,8 +263,9 @@ public class BarberiaChupirules {
         if (keyStroke != null) {
             InputMap inputMap = contentPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
             ActionMap actionMap = contentPanel.getActionMap();
-
-            inputMap.put(KeyStroke.getKeyStroke(keyStroke), cardName);
+            
+            KeyStroke ks = KeyStroke.getKeyStroke(keyStroke);
+            if (ks != null) inputMap.put(ks, cardName); // Check null
             actionMap.put(cardName, new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -254,51 +278,101 @@ public class BarberiaChupirules {
     public void setModuleActive(String cardName) {
         cardLayout.show(contentPanel, cardName);
         this.currentModule = cardName;
+        
+        // Check for dynamic title update from Config
+        if (cardName.equals("INICIO") || cardName.equals("CONFIG")) {
+            loadConfig(); 
+        }
 
         // Actualizar visualmente los botones
         for (Map.Entry<String, JButton> entry : menuButtons.entrySet()) {
+            JButton b = entry.getValue();
             if (entry.getKey().equals(cardName)) {
                 // Activo
-                JButton b = entry.getValue();
                 b.setBackground(Theme.COLOR_PRIMARY); // Merge with content
                 b.setForeground(Theme.COLOR_ACCENT_GOLD);
-                b.setBorder(BorderFactory.createMatteBorder(0, 4, 0, 0, Theme.COLOR_ACCENT_GOLD));
                 b.setFont(Theme.FONT_BOLD);
+                b.repaint(); // Force paint
             } else {
                 // Inactivo
-                JButton b = entry.getValue();
-                b.setBackground(Theme.COLOR_SECONDARY);
-                b.setForeground(Theme.COLOR_TEXT);
-                b.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
-                b.setFont(Theme.FONT_REGULAR);
+                b.setBackground(Color.BLACK); // Black background
+                b.setForeground(Color.WHITE); // High visibility
+                b.setFont(Theme.FONT_BOLD);
+                b.repaint();
             }
         }
     }
 
-    // ✨ BOTÓN DE MENÚ LATERAL
+    private void addMenuSection(JPanel container, String title) {
+        JLabel lbl = new JLabel(title);
+        lbl.setFont(new Font("Segoe UI", Font.BOLD, 10)); 
+        lbl.setForeground(new Color(150, 150, 150)); // Muted header
+        lbl.setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 0));
+        lbl.setAlignmentX(JComponent.LEFT_ALIGNMENT);
+        container.add(lbl);
+    }
+
+    private void addMenuSpacer(JPanel container) {
+        container.add(javax.swing.Box.createRigidArea(new Dimension(0, 15))); // Increased section spacing
+    }
+
+    // ✨ BOTÓN DE MENÚ LATERAL - MODERNO
     private JButton createMenuButton(String text) {
-        JButton btn = new JButton(text);
-        btn.setPreferredSize(new Dimension(220, 40));
-        btn.setForeground(Theme.COLOR_TEXT);
-        btn.setBackground(Theme.COLOR_SECONDARY);
-        btn.setFont(Theme.FONT_REGULAR);
+        JButton btn = new JButton(text) {
+            @Override
+            protected void paintComponent(java.awt.Graphics g) {
+                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Paint custom rounded background
+                g2.setColor(getBackground());
+                g2.fillRoundRect(0, 0, getWidth()-1, getHeight()-1, 15, 15);
+                
+                // Paint White Border
+                g2.setColor(Color.WHITE);
+                g2.setStroke(new java.awt.BasicStroke(1f));
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 15, 15);
+                
+                // Active Indicator Line (if active/gold)
+                if (getForeground().equals(Theme.COLOR_ACCENT_GOLD)) {
+                    g2.setColor(Theme.COLOR_ACCENT_GOLD);
+                    // Slightly adjust indicator to fit inside border
+                    g2.fillRect(4, 8, 4, getHeight()-16);
+                }
+                
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        
+        btn.setMaximumSize(new Dimension(Short.MAX_VALUE, 45)); 
+        btn.setPreferredSize(new Dimension(220, 45)); 
+        btn.setForeground(Color.WHITE); 
+        btn.setBackground(Color.BLACK); // Default Black
+        btn.setFont(Theme.FONT_BOLD); 
         btn.setFocusPainted(false);
-        btn.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
         btn.setHorizontalAlignment(SwingConstants.LEFT);
-        btn.setIconTextGap(15);
+        btn.setIconTextGap(12);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btn.setAlignmentX(JComponent.LEFT_ALIGNMENT); 
+        
+        // Critical for custom painting transparency
+        btn.setContentAreaFilled(false); 
+        btn.setBorderPainted(false);
+        // Add padding via border but don't paint it
+        btn.setBorder(BorderFactory.createEmptyBorder(0, 15, 0, 0)); // Slightly more padding to clear border
 
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                // Hover effect
-                if (!btn.getForeground().equals(Theme.COLOR_ACCENT_GOLD)) { // If not active
-                     btn.setBackground(Theme.COLOR_SECONDARY.brighter());
+                if (!btn.getForeground().equals(Theme.COLOR_ACCENT_GOLD)) { 
+                     btn.setBackground(new Color(40, 40, 40)); // Dark Gray
+                     btn.repaint();
                 }
             }
-
             public void mouseExited(java.awt.event.MouseEvent evt) {
                 if (!btn.getForeground().equals(Theme.COLOR_ACCENT_GOLD)) {
-                    btn.setBackground(Theme.COLOR_SECONDARY);
+                    btn.setBackground(Color.BLACK); // Revert
+                    btn.repaint();
                 }
             }
         });

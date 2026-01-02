@@ -50,6 +50,7 @@ public class HistorialPanel extends JPanel {
         searchPanel.add(lblBuscar);
         
         txtBuscar = new JTextField(20);
+        txtBuscar.setToolTipText("Buscar por Cliente, Tipo o Fecha (YYYY-MM-DD)");
         searchPanel.add(txtBuscar);
         headerPanel.add(searchPanel, BorderLayout.SOUTH);
 

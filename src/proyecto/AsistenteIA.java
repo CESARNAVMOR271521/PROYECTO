@@ -27,16 +27,22 @@ public class AsistenteIA {
         "- AGENDAR [ARGS] (Citas: 'Cita para Juan mañana a las 5') " + 
         "Formato de respuesta: COMANDO [ARGUMENTOS]";
 
+    private proyecto.dao.RegistroVozDAO logDao;
+
     public AsistenteIA(BarberiaChupirules app) {
         this.mainApp = app;
         this.aiClient = new OllamaClient();
         this.active = true;
+        this.logDao = new proyecto.dao.RegistroVozDAO();
     }
 
     public void iniciarEscucha() {
         ReconocimientoVoz.getInstance().startListening(texto -> {
             if (!active) return;
             System.out.println("Voz detectada: " + texto);
+            // Log to DB
+            logDao.insertar(texto);
+            
             // Use hybrid processing
             procesarHibrido(texto);
         });
@@ -45,7 +51,9 @@ public class AsistenteIA {
     private void procesarComando(String textoUsuario) {
         new Thread(() -> {
             // Feedback inmediato de "Pensando..."
-            // TextToSpeech.speak("Procesando..."); 
+            try {
+                 TextToSpeech.speak("Procesando");
+            } catch (Exception e) {} 
 
             String prompt = SYSTEM_PROMPT + "\nUsuario: " + textoUsuario + "\nAsistente:";
             String respuesta = aiClient.sendPrompt(prompt);
@@ -323,6 +331,7 @@ public class AsistenteIA {
         if (input.contains("COMPRA")) return "COMPRAS";
         if (input.contains("VOZ")) return "VOZ_LOGS";
         if (input.contains("INICIO") || input.contains("CASA")) return "INICIO";
+        if (input.contains("CONFIG")) return "CONFIG"; // Added configuration
         return null;
     }
 
@@ -332,9 +341,11 @@ public class AsistenteIA {
         String args = parts.length > 1 ? parts[1] : "";
 
         if (comando.equals("NULL") || comando.isEmpty()) return;
-
-        if (comando.equals("SALIR")) {
-            TextToSpeech.speak("Hasta luego.");
+        
+        // Custom exit phrase
+        if (respuestaIA.contains("SALIR PROGRAMA") || comando.equals("SALIR")) {
+            TextToSpeech.speak("Cerrando programa. Hasta luego.");
+            try { Thread.sleep(1500); } catch (InterruptedException e) {}
             System.exit(0);
             return;
         }

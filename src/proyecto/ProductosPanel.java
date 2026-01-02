@@ -299,10 +299,16 @@ public class ProductosPanel extends JPanel implements VoiceAware {
 
     private void updateProducto() {
         int row = table.getSelectedRow();
-        if (row == -1)
-            return;
+        if (row == -1) {
+             JOptionPane.showMessageDialog(this, "Seleccione un producto para actualizar");
+             return;
+        }
         int modelRow = table.convertRowIndexToModel(row);
         int id = (int) tableModel.getValueAt(modelRow, 0);
+
+        System.out.println("Updating Product ID: " + id);
+        System.out.println("New Stock: " + txtStock.getText());
+        System.out.println("New Desc: " + txtDescripcion.getText());
 
         try {
             double pVenta = Double.parseDouble(txtPrecioVenta.getText());
@@ -445,15 +451,18 @@ public class ProductosPanel extends JPanel implements VoiceAware {
                         txtPrecioCompra.setText(val.replaceAll("[^0-9.]", "")); 
                         break;
                         
+                    // Check MINIMO first to avoid "STOCK" matching "STOCK MINIMO"
+                    case "MINIMO": 
+                    case "ALERTA":
+                    case "STOCK_MINIMO":
+                        txtMinimo.setText(val.replaceAll("[^0-9]", "")); 
+                        break;
+
                     case "STOCK": 
                     case "CANTIDAD":
                     case "EXISTENCIA":
+                    case "STOCK_ACTUAL":
                         txtStock.setText(val.replaceAll("[^0-9]", "")); 
-                        break;
-                        
-                    case "MINIMO": 
-                    case "ALERTA":
-                        txtMinimo.setText(val.replaceAll("[^0-9]", "")); 
                         break;
                 }
                 break;

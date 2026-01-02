@@ -172,6 +172,40 @@ public class CitasPanel extends JPanel implements VoiceAware {
         });
         
         Theme.bindActionKeys(this, btnAdd, btnDelete, btnRefresh, null);
+        
+        // Add Selection Listener
+        table.getSelectionModel().addListSelectionListener(e -> {
+            boolean isAdjusting = e.getValueIsAdjusting(); 
+            if (!isAdjusting) {
+                loadSelection();
+            }
+        });
+    }
+
+    private void loadSelection() {
+        int row = table.getSelectedRow();
+        if (row == -1) return;
+        
+        int modelRow = table.convertRowIndexToModel(row);
+        
+        // Columns: 0=ID, 1=Datum, 2=Hora, 3=Cliente, 4=Barbero, 5=Servicio, 6=Estado
+        try {
+            Object fechaObj = tableModel.getValueAt(modelRow, 1);
+            Object horaObj = tableModel.getValueAt(modelRow, 2);
+            Object clienteObj = tableModel.getValueAt(modelRow, 3);
+            Object barberoObj = tableModel.getValueAt(modelRow, 4);
+            Object servicioObj = tableModel.getValueAt(modelRow, 5);
+
+            if (fechaObj != null) txtFecha.setText(fechaObj.toString());
+            if (horaObj != null) txtHora.setText(horaObj.toString());
+            
+            if (clienteObj != null) selectInCombo(cbCliente, clienteObj.toString());
+            if (barberoObj != null) selectInCombo(cbBarbero, barberoObj.toString());
+            if (servicioObj != null) selectInCombo(cbServicio, servicioObj.toString());
+            
+        } catch (Exception ex) {
+            System.err.println("Error loading selection: " + ex.getMessage());
+        }
     }
 
     private void addLabel(JPanel panel, String text) {
@@ -331,6 +365,24 @@ public class CitasPanel extends JPanel implements VoiceAware {
                 String field = parts[0].toUpperCase();
                 String val = parts[1];
                 setField(field, val);
+                break;
+                
+            case "SELECT":
+            case "SELECCIONAR":
+            case "BUSCAR": 
+                if (args == null || args.isEmpty()) return;
+                String query = args.toUpperCase();
+                for (int i = 0; i < table.getRowCount(); i++) {
+                    // Check Cliente (3) or Barbero (4)
+                     String client = table.getValueAt(i, 3).toString().toUpperCase();
+                     String barber = table.getValueAt(i, 4).toString().toUpperCase();
+                     if (client.contains(query) || barber.contains(query)) {
+                         table.setRowSelectionInterval(i, i);
+                         table.scrollRectToVisible(table.getCellRect(i, 0, true));
+                         // loadSelection is handled by listener now
+                         break;
+                     }
+                }
                 break;
         }
     }

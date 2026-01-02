@@ -17,7 +17,7 @@ import java.awt.*;
 import java.time.LocalDate;
 import java.util.List;
 
-public class ComprasPanel extends JPanel {
+public class ComprasPanel extends JPanel implements VoiceAware {
 
     private CompraProveedorDAO compraDAO;
     private DetalleCompraDAO detalleDAO;
@@ -237,8 +237,10 @@ public class ComprasPanel extends JPanel {
             return;
         }
 
-        if (cbProveedor.getSelectedIndex() == -1)
+        if (cbProveedor.getSelectedIndex() == -1) {
+            JOptionPane.showMessageDialog(this, "Seleccione un proveedor.");
             return;
+        }
         Proveedor proveedor = listaProveedores.get(cbProveedor.getSelectedIndex());
         double total = Double.parseDouble(txtTotal.getText());
         String fecha = LocalDate.now().toString();
@@ -282,6 +284,63 @@ public class ComprasPanel extends JPanel {
 
         } else {
             JOptionPane.showMessageDialog(this, "Error al registrar la compra (Cabecera).");
+        }
+    }
+    @Override
+    public void handleVoiceCommand(String command, String args) {
+        String argUpper = (args != null) ? args.toUpperCase() : "";
+
+        switch (command) {
+            case "ADD":
+            case "AGREGAR":
+                addItemToCart();
+                break;
+            case "PROCESS":
+            case "PROCESAR":
+                procesarCompra();
+                break;
+            case "CLEAR":
+            case "LIMPIAR":
+                clearForm();
+                break;
+            case "SET_FIELD":
+                String[] parts = args.split(" ", 2);
+                if (parts.length < 2) return;
+                String field = parts[0].toUpperCase();
+                String val = parts[1];
+                setField(field, val);
+                break;
+            default:
+                System.out.println("Comando no reconocido en Compras: " + command);
+        }
+    }
+
+    private void setField(String field, String val) {
+        val = val.toUpperCase().trim();
+        switch (field) {
+            case "PROVEEDOR":
+                selectInCombo(cbProveedor, val);
+                break;
+            case "PRODUCTO":
+                selectInCombo(cbProducto, val);
+                break;
+            case "CANTIDAD":
+                txtCantidad.setText(val.replaceAll("[^0-9]", ""));
+                break;
+            case "COSTO":
+            case "PRECIO":
+                txtCosto.setText(val.replaceAll("[^0-9.]", ""));
+                break;
+        }
+    }
+
+    private void selectInCombo(JComboBox<String> cb, String search) {
+        for (int i = 0; i < cb.getItemCount(); i++) {
+            String item = cb.getItemAt(i).toUpperCase();
+            if (item.contains(search)) {
+                cb.setSelectedIndex(i);
+                return;
+            }
         }
     }
 }

@@ -124,13 +124,13 @@ public class ProveedoresPanel extends JPanel implements VoiceAware {
         btnPanel.add(btnVoice);
         panelList.add(btnPanel, BorderLayout.SOUTH);
 
-        // Click listener
-        tableProveedores.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
+        // Selection Listener
+        tableProveedores.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
                 int row = tableProveedores.getSelectedRow();
                 if (row != -1) {
-                    int id = (int) modelProveedores.getValueAt(row, 0);
+                    int modelRow = tableProveedores.convertRowIndexToModel(row);
+                    int id = (int) modelProveedores.getValueAt(modelRow, 0);
                     cargarDetalles(id);
                 }
             }
@@ -298,8 +298,6 @@ public class ProveedoresPanel extends JPanel implements VoiceAware {
                     if (name.contains(query)) {
                         tableProveedores.setRowSelectionInterval(i, i);
                         tableProveedores.scrollRectToVisible(tableProveedores.getCellRect(i, 0, true));
-                        int id = (int) modelProveedores.getValueAt(i, 0);
-                        cargarDetalles(id);
                         break;
                     }
                 }

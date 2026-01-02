@@ -9,7 +9,7 @@ import java.util.List;
 public class CompraProveedorDAO {
 
     public int insertar(CompraProveedor compra) {
-        String sql = "INSERT INTO compra_proveedor (id_proveedor, total, fecha) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO CompraProveedor (id_proveedor, total, fecha) VALUES (?, ?, ?)";
         try (Connection conn = Conexion.conectar();
                 PreparedStatement pstmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
@@ -33,7 +33,7 @@ public class CompraProveedorDAO {
 
     public List<CompraProveedor> listar() {
         List<CompraProveedor> lista = new ArrayList<>();
-        String sql = "SELECT * FROM compra_proveedor";
+        String sql = "SELECT * FROM CompraProveedor";
 
         try (Connection conn = Conexion.conectar();
                 Statement stmt = conn.createStatement();

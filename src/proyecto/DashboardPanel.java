@@ -26,7 +26,14 @@ import proyecto.util.Theme;
 
 public class DashboardPanel extends JPanel {
 
+    private java.util.function.Consumer<String> navigation;
+
     public DashboardPanel() {
+        this(null);
+    }
+
+    public DashboardPanel(java.util.function.Consumer<String> navigation) {
+        this.navigation = navigation;
         setLayout(new BorderLayout(20, 20));
         Theme.applyTheme(this);
         setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -36,11 +43,44 @@ public class DashboardPanel extends JPanel {
         lblTitle.setFont(Theme.FONT_TITLE);
         lblTitle.setForeground(Theme.COLOR_ACCENT_GOLD);
         lblTitle.setHorizontalAlignment(SwingConstants.LEFT);
-        add(lblTitle, BorderLayout.NORTH);
+        
+        // Header Panel (Title + Actions)
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setBackground(Theme.COLOR_PRIMARY);
+        headerPanel.add(lblTitle, BorderLayout.WEST);
+
+        // Actions Panel
+        JPanel actionsPanel = new JPanel(new GridLayout(1, 3, 10, 0));
+        actionsPanel.setBackground(Theme.COLOR_PRIMARY);
+        
+        if (navigation != null) {
+            actionsPanel.add(createActionButton("💰 Nueva Venta", "VENTAS", Theme.COLOR_ACCENT_BLUE));
+            actionsPanel.add(createActionButton("📅 Nueva Cita", "CITAS", Theme.COLOR_ACCENT_RED));
+            actionsPanel.add(createActionButton("👥 Nuevo Cliente", "CLIENTES", Theme.COLOR_ACCENT_GOLD));
+        }
+        
+        // Wrap actions in a flow/box to not stretch too much? 
+        // actually GridLayout is fine, buttons will be big.
+        // Let's make them fixed size?
+        JPanel actionWrapper = new JPanel();
+        actionWrapper.setBackground(Theme.COLOR_PRIMARY);
+        actionWrapper.add(actionsPanel);
+        
+        // headerPanel.add(actionWrapper, BorderLayout.EAST); 
+        // Better: Put actions in the main flow 
 
         // Content Scroll
         JPanel content = new JPanel(new BorderLayout(20, 20));
         content.setBackground(Theme.COLOR_PRIMARY);
+        
+        // Container for Top stuff
+        JPanel topContainer = new JPanel(new BorderLayout(0, 20));
+        topContainer.setBackground(Theme.COLOR_PRIMARY);
+        topContainer.add(lblTitle, BorderLayout.NORTH);
+        
+        if (navigation != null) {
+             topContainer.add(createQuickActionsPanel(), BorderLayout.CENTER);
+        }
 
         // 1. KPI Cards Row
         JPanel kpiPanel = new JPanel(new GridLayout(1, 4, 20, 0));
@@ -52,7 +92,13 @@ public class DashboardPanel extends JPanel {
         kpiPanel.add(createKpiCard("Total Clientes", getTotalClientes(), Theme.COLOR_ACCENT_GOLD));
         kpiPanel.add(createKpiCard("Prod. Bajo Stock", getProductosBajoStock(), Color.ORANGE));
 
-        content.add(kpiPanel, BorderLayout.NORTH);
+        // Group TopContainer and KPI
+        JPanel northGroup = new JPanel(new BorderLayout(0, 20));
+        northGroup.setBackground(Theme.COLOR_PRIMARY);
+        northGroup.add(topContainer, BorderLayout.NORTH);
+        northGroup.add(kpiPanel, BorderLayout.CENTER);
+
+        content.add(northGroup, BorderLayout.NORTH);
 
         // 2. Charts Row
         JPanel chartsPanel = new JPanel(new GridLayout(1, 2, 20, 20));
@@ -70,9 +116,78 @@ public class DashboardPanel extends JPanel {
         JScrollPane scroll = new JScrollPane(content);
         scroll.setBorder(null);
         scroll.getViewport().setBackground(Theme.COLOR_PRIMARY);
+        // Increase scroll speed
+        scroll.getVerticalScrollBar().setUnitIncrement(16);
         add(scroll, BorderLayout.CENTER);
+    }
+    
+    private JPanel createQuickActionsPanel() {
+        JPanel p = new JPanel(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT, 0, 0));
+        p.setBackground(Theme.COLOR_PRIMARY);
         
-        // Refresh button or auto-refresh could be added, but simple Init is fine for now
+        p.add(createActionButton("💰 Registrar Venta", "VENTAS", Theme.COLOR_ACCENT_BLUE));
+        p.add(javax.swing.Box.createHorizontalStrut(15));
+        p.add(createActionButton("📅 Agendar Cita", "CITAS", Theme.COLOR_ACCENT_RED));
+        p.add(javax.swing.Box.createHorizontalStrut(15));
+        p.add(createActionButton("👥 Registrar Cliente", "CLIENTES", Theme.COLOR_ACCENT_GOLD));
+        
+        return p;
+    }
+    
+    private javax.swing.JButton createActionButton(String text, String module, Color color) {
+        javax.swing.JButton btn = new javax.swing.JButton(text) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Paint custom rounded background (Black)
+                g2.setColor(getBackground());
+                g2.fillRoundRect(0, 0, getWidth()-1, getHeight()-1, 15, 15);
+                
+                // Paint White Border
+                g2.setColor(Color.WHITE);
+                g2.setStroke(new java.awt.BasicStroke(1f));
+                g2.drawRoundRect(0, 0, getWidth()-1, getHeight()-1, 15, 15);
+                
+                // Accent Indicator (Little strip on left to keep the color coding)
+                g2.setColor(color);
+                g2.fillRect(4, 10, 4, getHeight()-20);
+
+                g2.dispose();
+                super.paintComponent(g);
+            }
+        };
+        
+        btn.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        btn.setForeground(Color.WHITE);
+        btn.setBackground(Color.BLACK); // Explicit Black base
+        // btn.setBorder(new Theme.RoundedBorder(15, color)); // Replaced by custom paint
+        btn.setFocusPainted(false);
+        btn.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btn.setPreferredSize(new Dimension(200, 60)); // Slightly larger
+        
+        // Critical for custom painting transparency
+        btn.setContentAreaFilled(false); 
+        btn.setBorderPainted(false);
+        btn.setBorder(BorderFactory.createEmptyBorder(0, 20, 0, 0)); // Padding for text to clear indicator
+
+        btn.addActionListener(e -> {
+            if (navigation != null) navigation.accept(module);
+        });
+        
+        btn.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                 btn.setBackground(new Color(40, 40, 40)); // Dark Gray on hover
+                 btn.repaint();
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                btn.setBackground(Color.BLACK); // Back to black
+                btn.repaint();
+            }
+        });
+        
+        return btn;
     }
 
     private JPanel createKpiCard(String title, String value, Color accentInfo) {
