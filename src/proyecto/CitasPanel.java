@@ -294,10 +294,25 @@ public class CitasPanel extends JPanel implements VoiceAware {
         int idCliente = clienteIds.get(cbCliente.getSelectedIndex());
         int idBarbero = barberoIds.get(cbBarbero.getSelectedIndex());
         int idServicio = servicioIds.get(cbServicio.getSelectedIndex());
+        String fecha = txtFecha.getText();
+        String hora = txtHora.getText();
 
-        String sql = "INSERT INTO Cita(fecha, hora, id_cliente, id_barbero, id_servicio, estado) VALUES(?,?,?,?,?,?)";
-        try (Connection conn = DatabaseHelper.connect();
-                PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = DatabaseHelper.connect()) {
+            // Check for conflicts
+            String checkSql = "SELECT COUNT(*) FROM Cita WHERE id_barbero = ? AND fecha = ? AND hora = ? AND estado != 'cancelado'";
+            try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
+                checkStmt.setInt(1, idBarbero);
+                checkStmt.setString(2, fecha);
+                checkStmt.setString(3, hora);
+                ResultSet rs = checkStmt.executeQuery();
+                if (rs.next() && rs.getInt(1) > 0) {
+                    JOptionPane.showMessageDialog(this, "El barbero ya tiene una cita en ese horario.", "Horario Ocupado", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+            }
+
+            String sql = "INSERT INTO Cita(fecha, hora, id_cliente, id_barbero, id_servicio, estado) VALUES(?,?,?,?,?,?)";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, txtFecha.getText());
             pstmt.setString(2, txtHora.getText());
             pstmt.setInt(3, idCliente);
@@ -308,6 +323,8 @@ public class CitasPanel extends JPanel implements VoiceAware {
             loadData();
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error al agendar: " + e.getMessage());
+        }} catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error de conexión o validación: " + e.getMessage());
         }
     }
 

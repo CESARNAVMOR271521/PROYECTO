@@ -95,4 +95,21 @@ public class InventarioDAO {
         }
         return null;
     }
+
+    public boolean verificarStock(int idProducto, int cantidadRequerida) {
+        String sql = "SELECT cantidad_actual FROM Producto WHERE id_producto = ?";
+        try (Connection conn = Conexion.conectar();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, idProducto);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) {
+                    int actual = rs.getInt("cantidad_actual");
+                    return actual >= cantidadRequerida;
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error al verificar stock: " + e.getMessage());
+        }
+        return false;
+    }
 }

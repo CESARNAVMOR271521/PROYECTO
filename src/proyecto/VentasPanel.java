@@ -172,6 +172,16 @@ public class VentasPanel extends JPanel implements VoiceAware {
         loadItems(); // Initial load
         
         Theme.bindActionKeys(this, btnAdd, btnProcess, btnClear, null);
+
+        // Auto-refresh when panel is shown
+        this.addComponentListener(new java.awt.event.ComponentAdapter() {
+            @Override
+            public void componentShown(java.awt.event.ComponentEvent e) {
+                loadClientes();
+                loadItems();
+                System.out.println("VentasPanel: Data refreshed on show.");
+            }
+        });
     }
     
     private void addLabel(JPanel panel, String text) {
@@ -304,6 +314,24 @@ public class VentasPanel extends JPanel implements VoiceAware {
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Monto inválido. Ingrese un número válido.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
+            }
+        }
+
+        // Validate Stock
+        proyecto.dao.InventarioDAO inventarioDAO = new proyecto.dao.InventarioDAO();
+        for (int i = 0; i < cartModel.getRowCount(); i++) {
+            String type = (String) cartModel.getValueAt(i, 0);
+            if ("Producto".equals(type)) {
+                int idItem = (int) cartModel.getValueAt(i, 1);
+                int qty = (int) cartModel.getValueAt(i, 4);
+                String name = (String) cartModel.getValueAt(i, 2);
+                
+                if (!inventarioDAO.verificarStock(idItem, qty)) {
+                    JOptionPane.showMessageDialog(this, 
+                        "Stock insuficiente para: " + name + "\nVerifique inventario.", 
+                        "Error de Stock", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
             }
         }
 

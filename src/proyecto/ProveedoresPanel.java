@@ -33,6 +33,9 @@ public class ProveedoresPanel extends JPanel implements VoiceAware {
     private DefaultTableModel modelProveedores;
 
     private JLabel lblNombre, lblTelefono, lblCorreo;
+    
+    // Promoted for Voice Access
+    private JTextField txtBuscar;
 
     private JTable tableHistorial;
     private DefaultTableModel modelHistorial;
@@ -89,11 +92,12 @@ public class ProveedoresPanel extends JPanel implements VoiceAware {
         searchPanel.setBackground(Theme.COLOR_SECONDARY);
         searchPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
         
+
         JLabel lblBuscar = new JLabel("Buscar: ");
         lblBuscar.setForeground(Theme.COLOR_TEXT);
         searchPanel.add(lblBuscar, BorderLayout.WEST);
         
-        JTextField txtBuscar = new JTextField();
+        txtBuscar = new JTextField();
         searchPanel.add(txtBuscar, BorderLayout.CENTER);
         panelList.add(searchPanel, BorderLayout.NORTH);
 
@@ -286,9 +290,7 @@ public class ProveedoresPanel extends JPanel implements VoiceAware {
     public void handleVoiceCommand(String command, String args) {
         switch (command) {
             case "SEARCH":
-                // Accessing local txtBuscar is hard if not field.
-                // Assuming txtBuscar is not promoted as field, we skip or promote it.
-                // In my viewing, it was local. I'll skip search for now or just log.
+                if (args != null) txtBuscar.setText(args);
                 break;
             case "SELECT":
                 if (args == null || args.isEmpty()) return;
